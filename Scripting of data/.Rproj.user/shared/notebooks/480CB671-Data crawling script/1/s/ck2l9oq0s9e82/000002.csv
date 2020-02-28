@@ -1,0 +1,17 @@
+"0","            tryCatch(
+                     download.file(downloadurl,temp),
+                     error = function(e) print(paste('did not work out'))
+                     )
+"
+"2","argument should be a character vector of length 1
+all but the first element will be ignored"
+"2","only first element of 'url' argument used"
+"2","only first element of 'destfile' argument used"
+"2","trying URL 'http://www.weather.gov.sg/files/dailydata/DAILYDATA_S77_201706.csv'
+"
+"2","Content type 'application/octet-stream'"
+"2"," length 1527 bytes
+"
+"2","downloaded 1527 bytes
+
+"

@@ -1,0 +1,24 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1582882047840.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B69F783F",
+    "lastKnownWriteTime" : 1582887269,
+    "last_content_update" : 1582887297231,
+    "path" : "C:/Users/LINGXING/Desktop/GIT/Va-Project/Scripting of data/Weather Dataset/Data crawling script.Rmd",
+    "project_path" : "Weather Dataset/Data crawling script.Rmd",
+    "properties" : {
+        "chunk_output_type" : "inline",
+        "cursorPosition" : "19,22",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
