@@ -18,7 +18,15 @@
 /*.Rcheck/
 
 # RStudio files
+<<<<<<< HEAD
 .Rproj.user/
+=======
+<<<<<<< HEAD
+*/.Rproj.user/*
+=======
+.Rproj.user/*
+>>>>>>> b3fd3a09700052a75e49fba034c930bb667324a9
+>>>>>>> 772b061b46a6016c79d6e5714d6cad771464d615
 
 # produced vignettes
 vignettes/*.html
