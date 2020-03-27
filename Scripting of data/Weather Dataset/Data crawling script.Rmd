@@ -1,3 +1,21 @@
+```{r echo = TRUE,eval=FALSE}
+packages <-
+  c('tidyverse',
+  'ggExtra',
+  'data.table',
+  'MASS',
+  'reshape',
+  'reshape2')
+
+for (p in packages) {
+  if (!require(p, character.only = T)) {
+    install.packages(p)
+  }
+    library(p, character.only = T)
+}
+
+```
+
 
 ```{r warning=FALSE}
 options(warn = -1)
@@ -38,23 +56,6 @@ options(warn = 0)
 
 ```
 
-```{r echo = TRUE,eval=FALSE}
-packages <-
-  c('tidyverse',
-  'ggExtra',
-  'data.table',
-  'MASS',
-  'reshape',
-  'reshape2')
-
-  for (p in packages) {
-  if (!require(p, character.only = T)) {
-  install.packages(p)
-  }
-  library(p, character.only = T)
-  }
-
-```
 
 ```{r}
 file_location = "merged data\\dataset.csv"
