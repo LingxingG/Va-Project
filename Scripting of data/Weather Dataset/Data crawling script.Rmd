@@ -2,7 +2,7 @@
 ```{r warning=FALSE}
 options(warn = -1)
 months = list('01','02','03','04','05','06','07','08','09','10','11','12')
-areacode = read.csv("AreaID.csv")
+areacode = read_csv("AreaID.csv")
 years <- list(1980:2019)
 
 for (x in 1:nrow(areacode)){
@@ -10,8 +10,23 @@ for (x in 1:nrow(areacode)){
   for (i in 1:length(years[[1]]-1)){
     year = years[[1]][i]
     for( month in months){
-        downloadurl=paste("http://www.weather.gov.sg/files/dailydata/DAILYDATA_",area,"_",sprintf("%s",year),month,".csv",sep="")
-        temp= paste(".\\raw data\\",area,"_",sprintf("%s",year),"_",month,".csv",sep = "")
+      downloadurl = paste(
+          "http://www.weather.gov.sg/files/dailydata/DAILYDATA_",
+          area,
+          "_",
+          sprintf("%s", year),
+          month,
+          ".csv",
+          sep = ""
+        )
+      temp = paste(".\\raw data\\",
+                   area,
+                   "_",
+                   sprintf("%s", year),
+                   "_",
+                   month,
+                   ".csv",
+                   sep = "")
 
         skip_to_next <- FALSE
         tryCatch(download.file(downloadurl,temp), error = function(e) { skip_to_next <<- TRUE})
@@ -24,13 +39,20 @@ options(warn = 0)
 ```
 
 ```{r echo = TRUE,eval=FALSE}
-packages <- c('tidyverse','ggExtra','data.table','MASS','reshape','reshape2')
-for(p in packages){
-  if(!require(p, character.only = T)){
-    install.packages(p)
+packages <-
+  c('tidyverse',
+  'ggExtra',
+  'data.table',
+  'MASS',
+  'reshape',
+  'reshape2')
+
+  for (p in packages) {
+  if (!require(p, character.only = T)) {
+  install.packages(p)
   }
   library(p, character.only = T)
-}
+  }
 
 ```
 
@@ -38,7 +60,7 @@ for(p in packages){
 file_location = "merged data\\dataset.csv"
 
 if (file_test("-f", file_location )){
-  DT = read.csv(file = file_location)
+  DT = read_csv(file = file_location)
   DT <- melt(DT, id=c("Station","Year","Month","Day"))
   print("File Loaded!")
 }else{
@@ -48,7 +70,7 @@ if (file_test("-f", file_location )){
   DT = rbindlist(lapply(files, fread))
   DT <- melt(DT, id=c("Station","Year","Month","Day"))
   setwd("..\\")
-  write.csv(DT,file_location,row.names=F)
+  write_csv(DT,file_location,row.names=F)
   print("File Created!")
 }
 ```
