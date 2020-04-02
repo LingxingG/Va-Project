@@ -1,6 +1,9 @@
-The purpose of this file is to crawl the data and combine all csv into one single file.
-
-
+The purpose of this file is to: \
+1. crawl the data from web \
+2. combine all csv into one single DF
+3. remove all speical characters ("-") to null values
+4. Join area code to the main DF for every area
+5. output one single csv file 
 
 ```{r echo = TRUE,eval=FALSE}
 packages <-
@@ -9,6 +12,7 @@ packages <-
   'data.table',
   'MASS',
   'reshape',
+  'dplyr',
   'reshape2')
 
 for (p in packages) {
@@ -21,7 +25,7 @@ for (p in packages) {
 ```
 
 
-```{r echo = True, warning=FALSE, eval = FALSE}
+```{r eval=FALSE, warning=FALSE}
 months = list('01',
               '02',
               '03',
@@ -34,7 +38,7 @@ months = list('01',
               '10',
               '11',
               '12')
-              areacode = read_csv("AreaID.csv")
+              areacode = read_csv("merged data\\AreaID.csv")
               years <- list(1980:2019)
 
 for (x in 1:nrow(areacode)){
@@ -72,22 +76,28 @@ for (x in 1:nrow(areacode)){
 ```
 
 
-```{r warning=FALSE, eval = FALSE, echo = True}
+```{r echo=TRUE, warning=FALSE, eval=FALSE}
 file_location = "merged data\\dataset.csv"
+area_code_file_location = "merged data\\area_geocode.csv"
+area_code_df = read_csv(file = area_code_file_location)
 
 if (file_test("-f", file_location )){
   DT = read_csv(file = file_location)
-  DT <- melt(DT, id=c("Station","Year","Month","Day"))
   print("File Loaded!")
 }else{
   setwd("raw data\\")
   files <- list.files(pattern="*.csv")
   DT = do.call(rbind, lapply(files, fread))
   DT = rbindlist(lapply(files, fread))
+
+  DT <- DT %>%
+         mutate_all(funs(type.convert(as.character(replace(., .=="—", NA)))))
   DT <- melt(DT, id=c("Station","Year","Month","Day"))
+  DT = DT %>% left_join(area_code_df, by = c("Station")) 
   setwd("..\\")
-  write_csv(DT,file_location,row.names=F)
+  write_csv(DT,file_location,col_names = TRUE)
   print("File Created!")
 }
 ```
+
 
