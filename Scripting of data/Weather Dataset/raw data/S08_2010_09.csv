@@ -1,31 +1,61 @@
-Station,Year,Month,Day,Daily Rainfall Total (mm),Highest 30 Min Rainfall (mm),Highest 60 Min Rainfall (mm),Highest 120 Min Rainfall (mm),Mean Temperature (°C),Maximum Temperature (°C),Minimum Temperature (°C),Mean Wind Speed (km/h),Max Wind Speed (km/h)
-Lower Peirce Reservoir,2010,9,1,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,2,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,3,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,4,19,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,5,5.3,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,6,3,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,7,0.2,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,8,86.6,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,9,0.2,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,10,9.4,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,11,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,12,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,13,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,14,7,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,15,6.2,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,16,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,17,43.6,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,18,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,19,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,20,0.6,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,21,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,22,5,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,23,29,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,24,32.8,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,25,2.4,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,26,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,27,8,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,28,0.2,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,29,0,—,—,—,—,—,—,—,—
-Lower Peirce Reservoir,2010,9,30,60.2,—,—,—,—,—,—,—,—
+Station,Year,Month,Day,Daily Rainfall Total (mm),Highest 30 Min Rainfall (mm),Highest 60 Min Rainfall (mm),Highest 120 Min Rainfall (mm),Mean Temperature (°C),Maximum Temperature (°C),Minimum Temperature (°C),Mean Wind Speed (km/h),Max Wind Speed (km/h)
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,1,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,2,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,3,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,4,19.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,5,5.30,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,6,3.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,7,0.20,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,8,86.60,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,9,0.20,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,10,9.40,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,11,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,12,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,13,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,14,7.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,15,6.20,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,16,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,17,43.60,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,18,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,19,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,20,0.60,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,21,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,22,5.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,23,29.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,24,32.80,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,25,2.40,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,26,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,27,8.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,28,0.20,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,29,0.00,—,—,—,—,—,—,—,—
+,,,,,,,,,,,,
+Lower Peirce Reservoir,2010,9,30,60.20,—,—,—,—,—,—,—,—
