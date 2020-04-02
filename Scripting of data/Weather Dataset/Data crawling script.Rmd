@@ -1,3 +1,7 @@
+The purpose of this file is to crawl the data and combine all csv into one single file.
+
+
+
 ```{r echo = TRUE,eval=FALSE}
 packages <-
   c('tidyverse',
@@ -17,11 +21,21 @@ for (p in packages) {
 ```
 
 
-```{r warning=FALSE}
-options(warn = -1)
-months = list('01','02','03','04','05','06','07','08','09','10','11','12')
-areacode = read_csv("AreaID.csv")
-years <- list(1980:2019)
+```{r echo = True, warning=FALSE, eval = FALSE}
+months = list('01',
+              '02',
+              '03',
+              '04',
+              '05',
+              '06',
+              '07',
+              '08',
+              '09',
+              '10',
+              '11',
+              '12')
+              areacode = read_csv("AreaID.csv")
+              years <- list(1980:2019)
 
 for (x in 1:nrow(areacode)){
   area = areacode[x,1]
@@ -45,19 +59,20 @@ for (x in 1:nrow(areacode)){
                    month,
                    ".csv",
                    sep = "")
-
-        skip_to_next <- FALSE
-        tryCatch(download.file(downloadurl,temp), error = function(e) { skip_to_next <<- TRUE})
-        if(skip_to_next) { next }
+      
+      if (!file.exists(file.path(temp))){
+          skip_to_next <- FALSE
+          tryCatch(download.file(downloadurl,temp), error = function(e) { skip_to_next <<- TRUE})
+          if(skip_to_next) { next }
+      } 
     }
   }
 }
-options(warn = 0)
 
 ```
 
 
-```{r}
+```{r warning=FALSE, eval = FALSE, echo = True}
 file_location = "merged data\\dataset.csv"
 
 if (file_test("-f", file_location )){
@@ -76,6 +91,3 @@ if (file_test("-f", file_location )){
 }
 ```
 
-```{r}
-
-```
