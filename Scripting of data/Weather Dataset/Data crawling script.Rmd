@@ -13,6 +13,7 @@ packages <-
   'MASS',
   'reshape',
   'dplyr',
+  'tibble',
   'reshape2')
 
 for (p in packages) {
@@ -91,10 +92,30 @@ if (file_test("-f", file_location )){
   DT = rbindlist(lapply(files, fread))
 
   DT <- DT %>%
-         mutate_all(funs(type.convert(as.character(replace(., .=="—", NA)))))
-  DT <- melt(DT, id=c("Station","Year","Month","Day"))
-  DT = DT %>% left_join(area_code_df, by = c("Station")) 
+         mutate(Date = paste(Day,Month,Year, sep = "-")) %>%
+         mutate_all(funs(type.convert(as.character(replace(., .=="—", NA))))) %>%
+         left_join(area_code_df, by = c("Station"))
+         
+  DT <-
+    melt(
+      DT,
+      id = c(
+        "Station",
+        "Year",
+        "Month",
+        "Day",
+        "Date",
+        "ID",
+        "Region",
+        "Lat. (N)",
+        "Long. (E)",
+        "Elevation above mean sea-level (m)"
+      )
+    )
   setwd("..\\")
+  
+  # Remove na rows
+  DT =  DT[complete.cases(DT[ , 12]),]
   write_csv(DT,file_location,col_names = TRUE)
   print("File Created!")
 }
