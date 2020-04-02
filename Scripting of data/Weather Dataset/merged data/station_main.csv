@@ -1,0 +1,54 @@
+Station,Station,,
+Admiralty,Admiralty,Admiralty,1
+Ang Mo Kio,Ang Mo Kio,Ang Mo Kio,1
+Botanic Garden,Boon Lay (West),Ang Mo Kio,0
+Bukit Timah,Botanic Garden,Botanic Garden,1
+Buona Vista,Buangkok,Botanic Garden,0
+Chai Chee,Bukit Panjang,Botanic Garden,0
+Changi,Bukit Timah,Bukit Timah,1
+Choa Chu Kang (Central),Buona Vista,Buona Vista,1
+Choa Chu Kang (South),Chai Chee,Chai Chee,1
+Choa Chu Kang (West),Changi,Changi,1
+Clementi,Choa Chu Kang (Central),Choa Chu Kang (Central),1
+Dhoby Ghaut,Choa Chu Kang (South),Choa Chu Kang (South),1
+East Coast Parkway,Choa Chu Kang (West),Choa Chu Kang (West),1
+Jurong (West),Clementi,Clementi,1
+Jurong Island,Dhoby Ghaut,Dhoby Ghaut,1
+Jurong Pier,East Coast Parkway,East Coast Parkway,1
+Kent Ridge,Jurong (North),East Coast Parkway,0
+Kranji Reservoir,Jurong (West),Jurong (West),1
+Lim Chu Kang,Jurong Island,Jurong Island,1
+Lower Peirce Reservoir,Jurong Pier,Jurong Pier,1
+Macritchie Reservoir,Kent Ridge,Kent Ridge,1
+Mandai,Khatib,Kent Ridge,0
+Marina Barrage,Kranji Reservoir,Kranji Reservoir,1
+Marine Parade,Lim Chu Kang,Lim Chu Kang,1
+Newton,Lower Peirce Reservoir,Lower Peirce Reservoir,1
+Nicoll Highway,Macritchie Reservoir,Macritchie Reservoir,1
+Pasir Panjang,Mandai,Mandai,1
+Pasir Ris (Central),Marina Barrage,Marina Barrage,1
+Pasir Ris (West),Marine Parade,Marine Parade,1
+Pulau Ubin,Newton,Newton,1
+Punggol,Nicoll Highway,Nicoll Highway,1
+Queenstown,Pasir Panjang,Pasir Panjang,1
+Sentosa Island,Pasir Ris (Central),Pasir Ris (Central),1
+Serangoon,Pasir Ris (West),Pasir Ris (West),1
+Simei,Pulau Ubin,Pulau Ubin,1
+Somerset (Road),Punggol,Punggol,1
+Tai Seng,Queenstown,Queenstown,1
+Tanjong Katong,Semakau Island,Queenstown,0
+Toa Payoh,Sentosa Island,Sentosa Island,1
+Tuas,Serangoon,Serangoon,1
+Tuas South,Simei,Simei,1
+Tuas West,Somerset (Road),Somerset (Road),1
+Ulu Pandan,Tai Seng,Tai Seng,1
+Upper Peirce Reservoir,Tanjong Katong,Tanjong Katong,1
+Upper Thomson,Toa Payoh,Toa Payoh,1
+Whampoa,Tuas,Tuas,1
+Yishun,Tuas South,Tuas South,1
+,Tuas West,Tuas West,1
+,Ulu Pandan,Ulu Pandan,1
+,Upper Peirce Reservoir,Upper Peirce Reservoir,1
+,Upper Thomson,Upper Thomson,1
+,Whampoa,Whampoa,1
+,Yishun,Yishun,1

@@ -8,13 +8,8 @@ The purpose of this file is to: \
 ```{r echo = TRUE,eval=FALSE}
 packages <-
   c('tidyverse',
-  'ggExtra',
   'data.table',
-  'MASS',
-  'reshape',
-  'dplyr',
-  'tibble',
-  'reshape2')
+  'dplyr')
 
 for (p in packages) {
   if (!require(p, character.only = T)) {
@@ -26,7 +21,7 @@ for (p in packages) {
 ```
 
 
-```{r eval=FALSE, warning=FALSE}
+```{r echo=TRUE, warning=FALSE}
 months = list('01',
               '02',
               '03',
@@ -39,8 +34,8 @@ months = list('01',
               '10',
               '11',
               '12')
-              areacode = read_csv("merged data\\AreaID.csv")
-              years <- list(1980:2019)
+areacode = read_csv("merged data\\AreaID.csv")
+years <- list(1980:2019)
 
 for (x in 1:nrow(areacode)){
   area = areacode[x,1]
@@ -77,13 +72,13 @@ for (x in 1:nrow(areacode)){
 ```
 
 
-```{r echo=TRUE, warning=FALSE, eval=FALSE}
+```{r echo=TRUE, warning=FALSE}
 file_location = "merged data\\dataset.csv"
 area_code_file_location = "merged data\\area_geocode.csv"
 area_code_df = read_csv(file = area_code_file_location)
 
 if (file_test("-f", file_location )){
-  DT = read_csv(file = file_location)
+  DT = read_csv(file = file_locatioSn)
   print("File Loaded!")
 }else{
   setwd("raw data\\")
@@ -94,31 +89,24 @@ if (file_test("-f", file_location )){
   DT <- DT %>%
          mutate(Date = paste(Day,Month,Year, sep = "-")) %>%
          mutate_all(funs(type.convert(as.character(replace(., .=="—", NA))))) %>%
-         left_join(area_code_df, by = c("Station"))
-         
-  DT <-
-    melt(
-      DT,
-      id = c(
-        "Station",
-        "Year",
-        "Month",
-        "Day",
-        "Date",
-        "ID",
-        "Region",
-        "Lat. (N)",
-        "Long. (E)",
-        "Elevation above mean sea-level (m)"
-      )
-    )
+         left_join(area_code_df, by = c("Station")) %>%
+          gather(Measurement, Value, 5:13)
+        
   setwd("..\\")
   
   # Remove na rows
-  DT =  DT[complete.cases(DT[ , 12]),]
+  DT =  DT[complete.cases(DT[ , 1]),]
   write_csv(DT,file_location,col_names = TRUE)
   print("File Created!")
 }
+```
+
+```{r}
+k = unique(DT['Station'])
+v = unique(area_code_df['Station'])
+
+write_csv(k,'merged data\\station_main.csv',col_names = TRUE)
+write_csv(v,'merged data\\station_geo.csv',col_names = TRUE)
 ```
 
 
