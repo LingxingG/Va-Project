@@ -90,7 +90,7 @@ if (file_test("-f", file_location )){
          mutate(Date = paste(Day,Month,Year, sep = "-")) %>%
          mutate_all(funs(type.convert(as.character(replace(., .=="—", NA))))) %>%
          left_join(area_code_df, by = c("Station")) %>%
-          gather(Measurement, Value, 5:13)
+         gather(Measurement, Value, 5:13)
         
   setwd("..\\")
   

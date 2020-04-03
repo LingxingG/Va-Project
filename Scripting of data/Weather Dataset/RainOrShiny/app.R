@@ -11,7 +11,6 @@ packages = c(
   'dplyr',
   'shiny',
   'shinythemes',
-  'lubridate',
   'sf',
   'tmap',
   'shinyWidgets',
@@ -25,8 +24,10 @@ packages = c(
   'ggrepel',
   'scales',
   'd3Tree',
-  'data.table'
+  'data.table',
+  'shinydashboard'
 )
+
 for (p in packages) {
   if (!require(p, character.only = T)) {
     install.packages(p)
@@ -34,3 +35,90 @@ for (p in packages) {
   library(p, character.only = T)
 }
 
+
+header <- dashboardHeader(title = "Basic dashboard")
+
+sidebar <- dashboardSidebar(sidebarMenu(
+  menuItem(
+    "Dashboard1",
+    tabName = "dashboard",
+    icon = icon("dashboard")
+  ),
+  menuItem(
+    "Dashboard2",
+     tabName = "widgets",
+     icon = icon("dashboard"))
+))
+
+
+dashboard1 <- tabItem(tabName = "dashboard",
+                     fluidRow(box(plotOutput("plot1", height = 250)),
+                              
+                              box(
+                                title = "Controls",
+                                sliderInput("slider", "Number of observations:", 1, 100, 50)
+                              )))
+              
+dashboard2 <- tabItem(
+                tabName = "widgets",
+                fluidRow(
+                  box(title = "Box title", "Box content"),
+                  box(status = "warning", "Box content")
+                ),
+                
+                fluidRow(
+                  box(
+                    title = "Title 1", width = 4, solidHeader = TRUE, status = "primary",
+                    "Box content"
+                  ),
+                  box(
+                    title = "Title 2", width = 4, solidHeader = TRUE,
+                    "Box content"
+                  ),
+                  box(
+                    title = "Title 1", width = 4, solidHeader = TRUE, status = "warning",
+                    "Box content"
+                  )
+                ),
+                
+                fluidRow(
+                  box(
+                    width = 4, background = "black",
+                    "A box with a solid black background"
+                  ),
+                  box(
+                    title = "Title 5", width = 4, background = "light-blue",
+                    "A box with a solid light-blue background"
+                  ),
+                  box(
+                    title = "Title 6",width = 4, background = "maroon",
+                    "A box with a solid maroon background"
+                  )
+                )
+              )
+
+body <- dashboardBody(
+          dashboardBody(
+            tabItems(
+              # First tab content
+              dashboard1,
+              
+              # Second tab content
+              dashboard2
+            )
+          )
+        )
+
+ui <- dashboardPage(header, sidebar, body)
+
+server <- function(input, output) {
+  set.seed(122)
+  histdata <- rnorm(500)
+  
+  output$plot1 <- renderPlot({
+    data <- histdata[seq_len(input$slider)]
+    hist(data)
+  })
+}
+
+shinyApp(ui, server)
