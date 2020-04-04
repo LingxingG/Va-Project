@@ -4,6 +4,7 @@ packages = c(
   'tidyverse',
   'sf', 
   'tmap',
+  'leaflet',
   'plotly',
   'shinydashboard'
 )
@@ -17,16 +18,7 @@ for (p in packages) {
 
 ######################### 2. define dashboard UI ##########################
 
-### 2.1 import attribute data ###
-mainDF <- read.csv("merged data\\dataset.csv")
-
-mpsz <- st_read(dsn = "geospatial",
-                layer = "MP14_SUBZONE_WEB_PL")
-
-mpsz_mainDF <- left_join(mpsz, mainDF, 
-                          by = c("SUBZONE_N" = "SZ"))
-
-### 2.2 define dashboard elemets ###
+### 2.1 define dashboard elemets ###
 header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 
 sidebar <- dashboardSidebar(sidebarMenu(
@@ -42,10 +34,10 @@ sidebar <- dashboardSidebar(sidebarMenu(
   )
 ))
 
-### 2.2.1 dfine dashboard body elements ###
+### 2.1.1 dfine dashboard body elements ###
 dashboard1 <- tabItem(tabName = "dashboard",
-                      fluidRow(
-                        plotOutput("plot1", height="550px")
+                      fluidPage(
+                        leafletOutput("my_tmap")
                         )
                       )
 
@@ -98,7 +90,7 @@ dashboard2 <- tabItem(tabName = "dashboard2",
                         )
                       ))
 
-### 2.2.2 Fill in dashboard elements ####
+### 2.1.2 Fill in dashboard elements ####
 body <- dashboardBody(dashboardBody(tabItems(
   
   # First tab content
@@ -111,11 +103,33 @@ ui <- dashboardPage(header, sidebar, body, skin="black")
 
 
 ######################### 3. define input output ##########################
+
+mainDF <- read.csv("merged data\\dataset.csv")
+
+mpsz <- st_read(dsn = "geospatial",
+                layer = "MP14_SUBZONE_WEB_PL")
+
+mpsz_mainDF <- left_join(mpsz, mainDF, 
+                         by = c("SUBZONE_N" = "SZ"))
+
+### 3.1 import attribute data ###
 server <- function(input, output) {
-  output$plot1 <- renderPlot({
-    tm_shape(mpsz_mainDF) +
-      tm_polygons()
-    lines(dens, col = "blue")
+  
+  rainfall <- mpsz_mainDF %>%
+    filter(str_detect(mpsz_mainDF$Measurement, "Daily Rainfall Total")) %>%
+    group_by(Region, Station, Year, Month) %>%
+    summarise(
+      mean_rain = mean(Value, na.rm = TRUE),
+      total_train = sum(Value, na.rm = TRUE)
+    ) %>%
+    filter(!is.na(Year)) %>%
+    filter(Year == 2019)
+  
+  ### 3.2 output ###
+  output$my_tmap = renderLeaflet({
+    tm <- tm_shape(rainfall) +
+      tm_polygons(fill = 'mean_rain')
+    tmap_leaflet(tm)
   })
 }
 
