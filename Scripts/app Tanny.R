@@ -1,11 +1,10 @@
 ####################### 1. define Package to install #######################
-packages = c(
-  'dplyr',
-  'tidyverse',
-  'sf', 
-  'tmap',
-  'shinydashboard'
-)
+packages = c('dplyr',
+             'tidyverse',
+             'sf',
+             'tmap',
+             'shinydashboard',
+             'ggstatsplot')
 
 for (p in packages) {
   if (!require(p, character.only = T)) {
@@ -17,7 +16,7 @@ for (p in packages) {
 ######################### 2. define dashboard UI ##########################
 
 ### 2.1 import attribute data ###
-mainDF <- read.csv("..\\merged data\\dataset.csv")
+mainDF <- read.csv("merged data\\dataset.csv")
 
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
@@ -34,6 +33,11 @@ sidebar <- dashboardSidebar(sidebarMenu(
   menuItem(
     "Dashboard2",
     tabName = "widgets",
+    icon = icon("dashboard")
+  ),
+  menuItem(
+    "Dashboard3",
+    tabName = "tanny",
     icon = icon("dashboard")
   )
 ))
@@ -96,14 +100,23 @@ dashboard2 <- tabItem(tabName = "widgets",
                         )
                       ))
 
+dashboard3 <- tabItem(tabName = "tanny",
+                      fluidRow(box(plotOutput("plot1", height = 250)),
+                               
+                               box(
+                                 title = "Controls",
+                                 sliderInput("slider", "Number of observations:", 1, 100, 50)
+                               )))
+
 ### 2.2.2 Fill in dashboard elements ####
-body <- dashboardBody(dashboardBody(tabItems(
-  
-  # First tab content
+body <- dashboardBody(dashboardBody(tabItems(# First tab content
   dashboard1,
   
   # Second tab content
-  dashboard2)))
+  dashboard2,
+  
+  # Third tab content
+  dashboard3)))
 
 ui <- dashboardPage(header, sidebar, body)
 
@@ -112,6 +125,7 @@ ui <- dashboardPage(header, sidebar, body)
 server <- function(input, output) {
   set.seed(122)
   histdata <- rnorm(500)
+
   
   output$plot1 <- renderPlot({
     data <- histdata[seq_len(input$slider)]

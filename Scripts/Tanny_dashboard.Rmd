@@ -1,0 +1,81 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+packages = c('dplyr',
+             'tidyverse',
+             'sf',
+             'tmap',
+             'shinydashboard',
+             'ggstatsplot')
+
+for (p in packages) {
+  if (!require(p, character.only = T)) {
+    install.packages(p)
+  }
+  library(p, character.only = T)
+}
+
+mainDF <- read.csv("merged data\\dataset.csv")
+```
+
+```{r}
+  rainfall <- mainDF %>%
+    select('Station',
+           'Region',
+           'subzone_name',
+           'Date',
+           'Year',
+           'Month',
+           'Measurement',
+           'Value') %>%
+    filter('Measurement' == 'Daily Rainfall Total (mm)')
+  
+  temperature <- mainDF %>%
+    select('Station',
+           'Region',
+           'subzone_name',
+           'Date',
+           'Year',
+           'Month',
+           'Measurement',
+           'Value') %>%
+    filter('Measurement' == 'Mean Temperature (°C)')
+  
+```
+
+```{r eruptions, echo=FALSE}
+inputPanel(
+  selectInput("n_breaks", label = "Number of bins:",
+              choices = c(10, 20, 35, 50), selected = 20),
+  
+  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
+              min = 0.2, max = 2, value = 1, step = 0.2)
+)
+
+renderPlot({
+  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
+       xlab = "Duration (minutes)", main = "Geyser eruption duration")
+  
+  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
+  lines(dens, col = "blue")
+})
+```
+
+## Embedded Application
+
+It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
+
+```{r tabsets, echo=FALSE}
+shinyAppDir(
+  system.file("examples/06_tabsets", package = "shiny"),
+  options = list(
+    width = "100%", height = 550
+  )
+)
+```
+
+
+
