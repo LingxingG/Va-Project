@@ -4,6 +4,7 @@ packages = c(
   'tidyverse',
   'sf', 
   'tmap',
+  'plotly',
   'shinydashboard'
 )
 
@@ -17,10 +18,13 @@ for (p in packages) {
 ######################### 2. define dashboard UI ##########################
 
 ### 2.1 import attribute data ###
-mainDF <- read.csv("..\\merged data\\dataset.csv")
+mainDF <- read.csv("merged data\\dataset.csv")
 
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
+
+mpsz_mainDF <- left_join(mpsz, mainDF, 
+                          by = c("SUBZONE_N" = "subzone_name"))
 
 ### 2.2 define dashboard elemets ###
 header <- dashboardHeader(title = "Rain and Shiny Dashboard")
@@ -28,26 +32,24 @@ header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 sidebar <- dashboardSidebar(sidebarMenu(
   menuItem(
     "Dashboard1",
-    tabName = "dashboard",
+    tabName = "dashboard1",
     icon = icon("dashboard")
   ),
   menuItem(
     "Dashboard2",
-    tabName = "widgets",
+    tabName = "dashboard2",
     icon = icon("dashboard")
   )
 ))
 
 ### 2.2.1 dfine dashboard body elements ###
 dashboard1 <- tabItem(tabName = "dashboard",
-                      fluidRow(box(plotOutput("plot1", height = 250)),
-                               
-                               box(
-                                 title = "Controls",
-                                 sliderInput("slider", "Number of observations:", 1, 100, 50)
-                               )))
+                      fluidRow(
+                        plotOutput("plot1", height="550px")
+                        )
+                      )
 
-dashboard2 <- tabItem(tabName = "widgets",
+dashboard2 <- tabItem(tabName = "dashboard2",
                       fluidRow(
                         box(title = "Box title", "Box content"),
                         box(status = "warning", "Box content")
@@ -105,20 +107,17 @@ body <- dashboardBody(dashboardBody(tabItems(
   # Second tab content
   dashboard2)))
 
-ui <- dashboardPage(header, sidebar, body)
+ui <- dashboardPage(header, sidebar, body, skin="black")
 
 
 ######################### 3. define input output ##########################
 server <- function(input, output) {
-  set.seed(122)
-  histdata <- rnorm(500)
-  
-  output$plot1 <- renderPlot({
-    data <- histdata[seq_len(input$slider)]
-    hist(data)
+  output$plot1 <- renderPlotly({
+    graph1 <- ggplot(tm_shape(mpsz_mainDF))
+    
+    ggplotly(graph1)
   })
 }
 
 ######################### 4. Finish app ##########################
-
 shinyApp(ui, server)
