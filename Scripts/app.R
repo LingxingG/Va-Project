@@ -24,7 +24,7 @@ mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
 
 mpsz_mainDF <- left_join(mpsz, mainDF, 
-                          by = c("SUBZONE_N" = "subzone_name"))
+                          by = c("SUBZONE_N" = "SZ"))
 
 ### 2.2 define dashboard elemets ###
 header <- dashboardHeader(title = "Rain and Shiny Dashboard")
@@ -112,12 +112,12 @@ ui <- dashboardPage(header, sidebar, body, skin="black")
 
 ######################### 3. define input output ##########################
 server <- function(input, output) {
-  output$plot1 <- renderPlotly({
-    graph1 <- ggplot(tm_shape(mpsz_mainDF))
-    
-    ggplotly(graph1)
+  output$plot1 <- renderPlot({
+    tm_shape(mpsz_mainDF) +
+      tm_polygons()
+    lines(dens, col = "blue")
   })
 }
 
 ######################### 4. Finish app ##########################
-shinyApp(ui, server)
+shinyApp(ui, server, options = list(width = "100%", height = 550))
