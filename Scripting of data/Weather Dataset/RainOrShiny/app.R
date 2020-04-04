@@ -1,4 +1,4 @@
-### define Package to install ###
+####################### 1. define Package to install #######################
 packages = c(
   'dplyr',
   'tidyverse',
@@ -7,7 +7,6 @@ packages = c(
   'shinydashboard'
 )
 
-### loading all necessary packages ###
 for (p in packages) {
   if (!require(p, character.only = T)) {
     install.packages(p)
@@ -15,11 +14,17 @@ for (p in packages) {
   library(p, character.only = T)
 }
 
-############################ define dashboard UI ##########################
+######################### 2. define dashboard UI ##########################
+
+### 2.1 import attribute data ###
+mainDF <- read.csv("..\\merged data\\dataset.csv")
+
+mpsz <- st_read(dsn = "geospatial",
+                layer = "MP14_SUBZONE_WEB_PL")
+
+### 2.2 define dashboard elemets ###
 header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 
-
-#@@@@@@@@@@@@@@@@@@@@@@@@@@ To fill up @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 sidebar <- dashboardSidebar(sidebarMenu(
   menuItem(
     "Dashboard1",
@@ -33,14 +38,7 @@ sidebar <- dashboardSidebar(sidebarMenu(
   )
 ))
 
-##################### declare main csv for DF #####################
-mainDF <- read.csv("..\\merged data\\dataset.csv")
-
-mpsz <- st_read(dsn = "geospatial",
-                layer = "MP14_SUBZONE_WEB_PL")
-
-#####################################################################
-
+### 2.2.1 dfine dashboard body elements ###
 dashboard1 <- tabItem(tabName = "dashboard",
                       fluidRow(box(plotOutput("plot1", height = 250)),
                                
@@ -97,9 +95,8 @@ dashboard2 <- tabItem(tabName = "widgets",
                           "A box with a solid maroon background"
                         )
                       ))
-##############################################################################
 
-##################### Just fill in dashboard variable ########################
+### 2.2.2 Fill in dashboard elements ####
 body <- dashboardBody(dashboardBody(tabItems(
   
   # First tab content
@@ -109,10 +106,9 @@ body <- dashboardBody(dashboardBody(tabItems(
   dashboard2)))
 
 ui <- dashboardPage(header, sidebar, body)
-##############################################################################
 
 
-################################ To FILL UP ##################
+######################### 3. define input output ##########################
 server <- function(input, output) {
   set.seed(122)
   histdata <- rnorm(500)
@@ -122,6 +118,7 @@ server <- function(input, output) {
     hist(data)
   })
 }
-#############################################################################
+
+######################### 4. Finish app ##########################
 
 shinyApp(ui, server)
