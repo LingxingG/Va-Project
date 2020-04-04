@@ -15,10 +15,11 @@ for (p in packages) {
   library(p, character.only = T)
 }
 
+############################ define dashboard UI ##########################
+header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 
-### define dashboard UI ###
-header <- dashboardHeader(title = "Basic dashboard")
 
+#@@@@@@@@@@@@@@@@@@@@@@@@@@ To fill up @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 sidebar <- dashboardSidebar(sidebarMenu(
   menuItem(
     "Dashboard1",
@@ -32,8 +33,13 @@ sidebar <- dashboardSidebar(sidebarMenu(
   )
 ))
 
-### declare main csv for DF ###
+##################### declare main csv for DF #####################
 mainDF <- read.csv("..\\merged data\\dataset.csv")
+
+mpsz <- st_read(dsn = "geospatial",
+                layer = "MP14_SUBZONE_WEB_PL")
+
+#####################################################################
 
 dashboard1 <- tabItem(tabName = "dashboard",
                       fluidRow(box(plotOutput("plot1", height = 250)),
@@ -91,15 +97,22 @@ dashboard2 <- tabItem(tabName = "widgets",
                           "A box with a solid maroon background"
                         )
                       ))
+##############################################################################
 
-body <- dashboardBody(dashboardBody(tabItems(# First tab content
+##################### Just fill in dashboard variable ########################
+body <- dashboardBody(dashboardBody(tabItems(
+  
+  # First tab content
   dashboard1,
   
   # Second tab content
   dashboard2)))
 
 ui <- dashboardPage(header, sidebar, body)
+##############################################################################
 
+
+################################ To FILL UP ##################
 server <- function(input, output) {
   set.seed(122)
   histdata <- rnorm(500)
@@ -109,5 +122,6 @@ server <- function(input, output) {
     hist(data)
   })
 }
+#############################################################################
 
 shinyApp(ui, server)
