@@ -41,6 +41,5 @@
 # R package: bookdown caching files
 /*_files/
 .Rproj.user
-dataset.csv
 *.Rhistory
 dataset.csv
