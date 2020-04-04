@@ -78,7 +78,7 @@ area_code_file_location = "merged data\\area_geocode.csv"
 area_code_df = read_csv(file = area_code_file_location)
 
 if (file_test("-f", file_location )){
-  DT = read_csv(file = file_locatioSn)
+  DT = read_csv(file = file_location)
   print("File Loaded!")
 }else{
   setwd("raw data\\")
