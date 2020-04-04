@@ -101,7 +101,7 @@ if (file_test("-f", file_location )){
   area_code_df <- bind_cols(area_code_df,
                             mpsz[as.numeric(st_within(tmp_sf, mpsz)),]) %>%
                             select(ID, Station, Region, Lat, Lng, SZ = SUBZONE_N) %>%
-                            mutate(SZ = str_to_title(SZ))
+                            mutate(SZ = toupper(SZ))
 
   setwd("raw data\\")
   files <- list.files(pattern="*.csv")
