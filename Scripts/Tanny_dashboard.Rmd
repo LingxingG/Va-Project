@@ -2,14 +2,17 @@
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 ```{r}
-packages = c('dplyr',
-             'tidyverse',
-             'sf',
-             'tmap',
-             'shinydashboard',
-             'ggstatsplot')
+packages = c(
+  'dplyr',
+  'tidyverse',
+  'sf', 
+  'tmap',
+  'plotly',
+  'stringr',
+  'shinydashboard',
+  'ggstatsplot'
+)
 
 for (p in packages) {
   if (!require(p, character.only = T)) {
@@ -22,28 +25,43 @@ mainDF <- read.csv("merged data\\dataset.csv")
 ```
 
 ```{r}
-  rainfall <- mainDF %>%
-    select('Station',
+   rainfall<- mainDF %>%
+    filter(str_detect(mainDF$Measurement,"Daily Rainfall Total")) %>%
+    group_by(Region,subzone_name,Station,Year,Month)%>%
+    summarise(avg_monthly_rainfall = mean(Value),
+              sum_monthly_rainfall = sum(Value))%>%
+    left_join(mainDF, .) %>%
+    select(
            'Region',
            'subzone_name',
-           'Date',
+           'Station',
            'Year',
            'Month',
-           'Measurement',
-           'Value') %>%
-    filter('Measurement' == 'Daily Rainfall Total (mm)')
-  
-  temperature <- mainDF %>%
-    select('Station',
+           'Value'
+           'avg_monthly_rainfall',
+           'sum_monthly_rainfall',
+           )%>%
+    filter(Year == 2019)
+
+  # rainfall <- unique(rainfall)
+    
+
+   temperature<- mainDF %>%
+    filter(str_detect(mainDF$Measurement,"Mean Temperature")) %>%
+    group_by(Region,subzone_name,Station,Year,Month)%>%
+    summarise(Mean_Temperature = mean(Value))%>%
+    left_join(mainDF, .) %>%
+    select(
            'Region',
            'subzone_name',
-           'Date',
+           'Station',
            'Year',
            'Month',
-           'Measurement',
-           'Value') %>%
-    filter('Measurement' == 'Mean Temperature (°C)')
-  
+           'Mean_Temperature',)%>%
+    filter(Year == 2019)
+   
+  # temperature <- unique(temperature)
+
 ```
 
 ```{r eruptions, echo=FALSE}
@@ -56,26 +74,14 @@ inputPanel(
 )
 
 renderPlot({
-  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
-       xlab = "Duration (minutes)", main = "Geyser eruption duration")
-  
-  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
-  lines(dens, col = "blue")
+  ggstatsplot::ggbetweenstats(
+    data = temperature,
+    x = Month,
+    y = Value,
+    title = "Distribution of sepal length across Iris species",
+    messages = FALSE
+  ) + # further modification outside of ggstatsplot
+    ggplot2::coord_cartesian(ylim = c(3, 8)) +
+    ggplot2::scale_y_continuous(breaks = seq(3, 8, by = 1))
 })
 ```
-
-## Embedded Application
-
-It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
-
-```{r tabsets, echo=FALSE}
-shinyAppDir(
-  system.file("examples/06_tabsets", package = "shiny"),
-  options = list(
-    width = "100%", height = 550
-  )
-)
-```
-
-
-
