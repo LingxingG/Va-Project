@@ -44,7 +44,7 @@ mainDF <- read.csv("merged data\\dataset.csv")
     filter(Year == 2019)
 
   # rainfall <- unique(rainfall)
-    
+    # na.rm
 
    temperature<- mainDF %>%
     filter(str_detect(mainDF$Measurement,"Mean Temperature")) %>%
