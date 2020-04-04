@@ -27,41 +27,19 @@ mainDF <- read.csv("merged data\\dataset.csv")
 ```{r}
    rainfall<- mainDF %>%
     filter(str_detect(mainDF$Measurement,"Daily Rainfall Total")) %>%
-    group_by(Region,subzone_name,Station,Year,Month)%>%
-    summarise(avg_monthly_rainfall = mean(Value),
-              sum_monthly_rainfall = sum(Value))%>%
-    left_join(mainDF, .) %>%
     select(
            'Region',
-           'subzone_name',
            'Station',
            'Year',
            'Month',
-           'Value'
-           'avg_monthly_rainfall',
-           'sum_monthly_rainfall',
-           )%>%
+           'Day',
+           'Value')  %>%
+    group_by(Region,Station,Year,Month) %>%
+    summarise(mean_rain = mean(Value,na.rm = TRUE),
+              total_train = sum(Value, na.rm = TRUE))%>%
+    filter(!is.na(Year)) %>%
     filter(Year == 2019)
-
-  # rainfall <- unique(rainfall)
-    # na.rm
-
-   temperature<- mainDF %>%
-    filter(str_detect(mainDF$Measurement,"Mean Temperature")) %>%
-    group_by(Region,subzone_name,Station,Year,Month)%>%
-    summarise(Mean_Temperature = mean(Value))%>%
-    left_join(mainDF, .) %>%
-    select(
-           'Region',
-           'subzone_name',
-           'Station',
-           'Year',
-           'Month',
-           'Mean_Temperature',)%>%
-    filter(Year == 2019)
-   
-  # temperature <- unique(temperature)
-
+ 
 ```
 
 ```{r eruptions, echo=FALSE}
