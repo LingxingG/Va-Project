@@ -2,10 +2,13 @@
 packages = c(
   'dplyr',
   'tidyverse',
-  'sf', 
+  'sf',
   'tmap',
   'leaflet',
   'plotly',
+  'shiny',
+  'stringr',
+  'tmaptools',
   'shinydashboard'
 )
 
@@ -35,103 +38,114 @@ sidebar <- dashboardSidebar(sidebarMenu(
 ))
 
 ### 2.1.1 dfine dashboard body elements ###
-dashboard1 <- tabItem(tabName = "dashboard",
-                      fluidPage(
-                        leafletOutput("my_tmap")
-                        )
-                      )
-
-dashboard2 <- tabItem(tabName = "dashboard2",
-                      fluidRow(
-                        box(title = "Box title", "Box content"),
-                        box(status = "warning", "Box content")
-                      ),
-                      
-                      fluidRow(
-                        box(
-                          title = "Title 1",
-                          width = 4,
-                          solidHeader = TRUE,
-                          status = "primary",
-                          "Box content"
-                        ),
-                        box(
-                          title = "Title 2",
-                          width = 4,
-                          solidHeader = TRUE,
-                          "Box content"
-                        ),
-                        box(
-                          title = "Title 1",
-                          width = 4,
-                          solidHeader = TRUE,
-                          status = "warning",
-                          "Box content"
-                        )
-                      ),
-                      
-                      fluidRow(
-                        box(
-                          width = 4,
-                          background = "black",
-                          "A box with a solid black background"
-                        ),
-                        box(
-                          title = "Title 5",
-                          width = 4,
-                          background = "light-blue",
-                          "A box with a solid light-blue background"
-                        ),
-                        box(
-                          title = "Title 6",
-                          width = 4,
-                          background = "maroon",
-                          "A box with a solid maroon background"
-                        )
-                      ))
+dashboard1 <- tabItem(tabName = "dashboard1",
+                      fluidPage(titlePanel("Tmap"),
+                                sidebarLayout(
+                                  sidebarPanel(
+                                    uiOutput("sYear")
+                                  ),
+                                  mainPanel(leafletOutput("mymap", height =550))
+                                )))
 
 ### 2.1.2 Fill in dashboard elements ####
 body <- dashboardBody(dashboardBody(tabItems(
   
   # First tab content
-  dashboard1,
-  
-  # Second tab content
-  dashboard2)))
+  dashboard1
+  # 
+  # # Second tab content
+  # dashboard2
+  )))
 
 ui <- dashboardPage(header, sidebar, body, skin="black")
 
-
 ######################### 3. define input output ##########################
-
-mainDF <- read.csv("merged data\\dataset.csv")
-
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
+mainDF <- read.csv("merged data\\dataset.csv")
 
-mpsz_mainDF <- left_join(mpsz, mainDF, 
-                         by = c("SUBZONE_N" = "SZ"))
+r_colors <- rgb(t(col2rgb(colors()) / 255))
+names(r_colors) <- colors()
 
 ### 3.1 import attribute data ###
 server <- function(input, output) {
   
-  rainfall <- mpsz_mainDF %>%
-    filter(str_detect(mpsz_mainDF$Measurement, "Daily Rainfall Total")) %>%
-    group_by(Region, Station, Year, Month) %>%
-    summarise(
-      mean_rain = mean(Value, na.rm = TRUE),
-      total_train = sum(Value, na.rm = TRUE)
-    ) %>%
-    filter(!is.na(Year)) %>%
+  #----------------------------------------dashboard 1----------------------------------------
+  rainfall_mean <- mainDF %>%
+    filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+    group_by(Region, SZ, Station, Year, Month) %>%
+    summarise(mean_rain = mean(Value, na.rm = TRUE),
+              total_rain = sum(Value, na.rm = TRUE))
+  
+  output$sYear <- renderUI({
+    choices <- as.character(unique(rainfall_mean$Year))
+    choices <- choices[-length(choices)]
+    choices <- str_sort(choices,decreasing = TRUE, numeric = TRUE)
+    selectInput(inputId = "YearLX", label = "Year:", choices = choices, selected = "2019")
+  }) 
+  
+  tmp <- rainfall_mean %>%
     filter(Year == 2019)
   
-  ### 3.2 output ###
-  output$my_tmap = renderLeaflet({
-    tm <- tm_shape(rainfall) +
-      tm_polygons(fill = 'mean_rain')
+  tmp <- left_join(mpsz, tmp,
+                   by = c("SUBZONE_N" = "SZ"))
+  
+  output$mymap = renderLeaflet({
+    tm <- tm_shape(tmp) +
+      tm_fill(
+        "mean_rain",
+        style = "quantile",
+        palette = "Blues",
+        legend.hist = TRUE,
+        legend.is.portrait = TRUE,
+        legend.hist.z = 0.1
+      ) +
+      tm_layout(
+        legend.height = 0.45,
+        legend.width = 0.35,
+        legend.outside = FALSE,
+        legend.position = c("right", "bottom"),
+        frame = FALSE
+      ) +
+      tm_borders(alpha = 0.5)
     tmap_leaflet(tm)
   })
+  observeEvent(input$YearLX, {
+    
+    #if(is.null(td)) return()
+    ## get the choice from teh drop-down box
+    YEAR = as.numeric(input$YearLX)
+    
+    ## supbset the data based on the choice
+    if(YEAR != 2019){
+       tmp_new<- rainfall_mean[rainfall_mean$Year == YEAR, ]
+       tmp_new <- left_join(mpsz, tmp_new,
+                        by = c("SUBZONE_N" = "SZ"))
+    }else{
+      tmp_new <- tmp
+    }
+    ## plot the subsetted ata
+    output$mymap = renderLeaflet({
+      tm <- tm_shape(tmp_new) +
+        tm_fill(
+          "mean_rain",
+          style = "quantile",
+          palette = "Blues",
+          legend.hist = TRUE,
+          legend.is.portrait = TRUE,
+          legend.hist.z = 0.1
+        ) +
+        tm_layout(
+          legend.height = 0.45,
+          legend.width = 0.35,
+          legend.outside = FALSE,
+          legend.position = c("right", "bottom"),
+          frame = FALSE
+        ) +
+        tm_borders(alpha = 0.5)
+      tmap_leaflet(tm)
+    })
+  })
 }
-
 ######################### 4. Finish app ##########################
-shinyApp(ui, server, options = list(width = "100%", height = 550))
+shinyApp(ui,server)
