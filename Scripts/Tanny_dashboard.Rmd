@@ -1,7 +1,15 @@
+---
+title: "Tanny dashboard"
+author: "Tanny Lai"
+date: "4 April 2020"
+output: html_document
+runtime: shiny
+---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 ```{r}
 packages = c(
   'dplyr',
@@ -11,7 +19,8 @@ packages = c(
   'plotly',
   'stringr',
   'shinydashboard',
-  'ggstatsplot'
+  'ggstatsplot',
+  'WRS2'
 )
 
 for (p in packages) {
@@ -25,41 +34,90 @@ mainDF <- read.csv("merged data\\dataset.csv")
 ```
 
 ```{r}
-   rainfall<- mainDF %>%
-    filter(str_detect(mainDF$Measurement,"Daily Rainfall Total")) %>%
-    select(
-           'Region',
-           'Station',
-           'Year',
-           'Month',
-           'Day',
-           'Value')  %>%
-    group_by(Region,Station,Year,Month) %>%
-    summarise(mean_rain = mean(Value,na.rm = TRUE),
-              total_train = sum(Value, na.rm = TRUE))%>%
-    filter(!is.na(Year)) %>%
-    filter(Year == 2019)
- 
+rainfall<- mainDF %>%
+  filter(str_detect(mainDF$Measurement,"Daily Rainfall Total")) %>%
+  select(
+    'Region',
+    'Station',
+    'Year',
+    'Month',
+    'Day',
+    'Value')  %>%
+  group_by(Region,Station,Year,Month) %>%
+  summarise(mean_rain = mean(Value,na.rm = TRUE),
+            total_rain = sum(Value, na.rm = TRUE))%>%
+  filter(!is.na(Year)) %>%
+  filter(Year == 2019)
+
+temperature<- mainDF %>%
+  filter(str_detect(mainDF$Measurement,"Mean Temperature")) %>%
+  select(
+    'Region',
+    'Station',
+    'Year',
+    'Month',
+    'Day',
+    'Value')  %>%
+  group_by(Region,Station,Year,Month) %>%
+  summarise(mean_temp = mean(Value,na.rm = TRUE))%>%
+  filter(!is.na(Year)) %>%
+  filter(Year == 2019) 
+
 ```
 
 ```{r eruptions, echo=FALSE}
-inputPanel(
-  selectInput("n_breaks", label = "Number of bins:",
-              choices = c(10, 20, 35, 50), selected = 20),
-  
-  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-              min = 0.2, max = 2, value = 1, step = 0.2)
-)
+# inputPanel(
+#   selectInput("n_breaks", label = "Number of bins:",
+#               choices = c(10, 20, 35, 50), selected = 20),
+#   
+#   sliderInput("bw_adjust", label = "Bandwidth adjustment:",
+#               min = 0.2, max = 2, value = 1, step = 0.2)
+# )
 
-renderPlot({
-  ggstatsplot::ggbetweenstats(
-    data = temperature,
-    x = Month,
-    y = Value,
-    title = "Distribution of sepal length across Iris species",
-    messages = FALSE
-  ) + # further modification outside of ggstatsplot
-    ggplot2::coord_cartesian(ylim = c(3, 8)) +
-    ggplot2::scale_y_continuous(breaks = seq(3, 8, by = 1))
-})
+# renderPlot({
+ggstatsplot::ggbetweenstats(
+  data = temperature,
+  x = Month,
+  y = mean_temp,
+  title = "Monthly Temperature",
+  ggtheme = ggthemes::theme_fivethirtyeight(),
+  ggstatsplot.layer = FALSE,
+  messages = FALSE
+) # further modification outside of ggstatsplot
+# })
+```
+```{r}
+ggstatsplot::ggwithinstats(
+  data = rainfall,
+  x = Month,
+  y = mean_rain,
+  title = "Monthly Rainfall",
+  ggtheme = ggthemes::theme_fivethirtyeight(),
+  ggstatsplot.layer = FALSE,
+  messages = FALSE)
+
+```
+
+
+```{r}
+mean_r <- aggregate(mean_rain ~ Month, rainfall, mean)
+
+mean_r <- round(mean_r,2)
+
+rain <- ggplot(rainfall, aes(factor(Month), mean_rain))
+rain + geom_violin(color="blue")+
+  geom_boxplot(width=0.1, color="grey", alpha=0.2)+  stat_summary(fun=mean, colour="darkblue", geom="point",
+                                                                  shape=18, size=3,show.legend = FALSE) +
+  geom_text(data = mean_r, size=3.5,aes(label = mean_rain, y = mean_rain + 0.8))
+```
+
+```{r}
+mean_t <- aggregate(mean_temp ~ Month, temperature, mean)
+
+mean_t <- round(mean_t,2)
+
+rain <- ggplot(temperature, aes(factor(Month), mean_temp))
+rain + geom_violin(color="blue")+
+  geom_boxplot(width=0.1, color="grey", alpha=0.2)+  stat_summary(fun=mean, colour="darkblue", geom="point",               shape=18, size=3,show.legend = FALSE) +
+  geom_text(data = mean_t, size=3.5,aes(label = mean_temp, y = mean_temp + 0.15))+ ggtitle ("Temperature distribution by month") +   xlab("Month") +  ylab("Average temperature ( ºC )")+theme_light()
 ```
