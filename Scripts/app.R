@@ -42,9 +42,10 @@ dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(titlePanel("Tmap"),
                                 sidebarLayout(
                                   sidebarPanel(
-                                    uiOutput("sYear")
+                                    uiOutput("sYear"),
+                                    uiOutput("sMonth")
                                   ),
-                                  mainPanel(leafletOutput("mymap", height =550))
+                                  mainPanel(leafletOutput("mymap"))
                                 )))
 
 ### 2.1.2 Fill in dashboard elements ####
@@ -64,9 +65,6 @@ mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
 mainDF <- read.csv("merged data\\dataset.csv")
 
-r_colors <- rgb(t(col2rgb(colors()) / 255))
-names(r_colors) <- colors()
-
 ### 3.1 import attribute data ###
 server <- function(input, output) {
   
@@ -78,70 +76,62 @@ server <- function(input, output) {
               total_rain = sum(Value, na.rm = TRUE))
   
   output$sYear <- renderUI({
-    choices <- as.character(unique(rainfall_mean$Year))
-    choices <- choices[-length(choices)]
-    choices <- str_sort(choices,decreasing = TRUE, numeric = TRUE)
-    selectInput(inputId = "YearLX", label = "Year:", choices = choices, selected = "2019")
-  }) 
+    Year_choices <- as.character(unique(rainfall_mean$Year))
+    Year_choices <- Year_choices[-length(Year_choices)]
+    Year_choices <- str_sort(Year_choices,decreasing = TRUE, numeric = TRUE)
+    selectInput(inputId = "YearLX", label = "Year:", choices = Year_choices, selected = "2019")
+  })
+  
+  output$sMonth <- renderUI({
+    Month_choices <- as.character(unique(rainfall_mean$Month))
+    Month_choices <- Month_choices[-length(Month_choices)]
+    selectInput(inputId = "MonthLX", label = "Month:", choices = Month_choices, selected = "Jan")
+  })
   
   tmp <- rainfall_mean %>%
-    filter(Year == 2019)
+    filter(Year == 2019) %>%
+    filter(Month == 'Jan')
   
   tmp <- left_join(mpsz, tmp,
                    by = c("SUBZONE_N" = "SZ"))
   
+  tmp <- st_transform(tmp, 4326)
   output$mymap = renderLeaflet({
     tm <- tm_shape(tmp) +
-      tm_fill(
-        "mean_rain",
-        style = "quantile",
-        palette = "Blues",
-        legend.hist = TRUE,
-        legend.is.portrait = TRUE,
-        legend.hist.z = 0.1
-      ) +
-      tm_layout(
-        legend.height = 0.45,
-        legend.width = 0.35,
-        legend.outside = FALSE,
-        legend.position = c("right", "bottom"),
-        frame = FALSE
-      ) +
+      tm_fill("mean_rain",
+              n = 6,
+              style = "quantile",
+              palette = "Blues") +
       tm_borders(alpha = 0.5)
     tmap_leaflet(tm)
   })
-  observeEvent(input$YearLX, {
+  
+  observeEvent( c(input$YearLX,input$MonthLX), {
     
-    #if(is.null(td)) return()
-    ## get the choice from teh drop-down box
+    ## get the choice from the drop-down box
     YEAR = as.numeric(input$YearLX)
-    
+    MONTH = as.character(input$MonthLX)
+
     ## supbset the data based on the choice
-    if(YEAR != 2019){
-       tmp_new<- rainfall_mean[rainfall_mean$Year == YEAR, ]
+    if(YEAR != 2019 || MONTH != 'Jan'){
+       tmp_new<- rainfall_mean %>%
+         filter(Year == YEAR) %>%
+         filter(Month == MONTH)
+        
        tmp_new <- left_join(mpsz, tmp_new,
-                        by = c("SUBZONE_N" = "SZ"))
+                            by = c("SUBZONE_N" = "SZ"))
+       tmp_new <- st_transform(tmp_new, 4326)
     }else{
       tmp_new <- tmp
     }
+    
     ## plot the subsetted ata
     output$mymap = renderLeaflet({
-      tm <- tm_shape(tmp_new) +
-        tm_fill(
-          "mean_rain",
-          style = "quantile",
-          palette = "Blues",
-          legend.hist = TRUE,
-          legend.is.portrait = TRUE,
-          legend.hist.z = 0.1
-        ) +
-        tm_layout(
-          legend.height = 0.45,
-          legend.width = 0.35,
-          legend.outside = FALSE,
-          legend.position = c("right", "bottom"),
-          frame = FALSE
-        ) +
+      tm <- tm_shape(tmp_new)+
+        tm_fill("mean_rain",
+                n = 6,
+                style = "quantile", 
+                palette = "Blues") +
         tm_borders(alpha = 0.5)
       tmap_leaflet(tm)
     })
