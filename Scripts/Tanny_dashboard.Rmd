@@ -6,10 +6,6 @@ output: html_document
 runtime: shiny
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ```{r}
 packages = c(
   'dplyr',
@@ -48,8 +44,7 @@ rainfall<- mainDF %>%
   group_by(Region,Station,Year,Month) %>%
   summarise(mean_rain = mean(Value,na.rm = TRUE),
             total_rain = sum(Value, na.rm = TRUE))%>%
-  filter(!is.na(Year)) #%>%
-  # filter(Year == 2019)
+  filter(!is.na(Year)) 
 
 temperature<- mainDF %>%
   filter(str_detect(mainDF$Measurement,"Mean Temperature")) %>%
@@ -62,47 +57,50 @@ temperature<- mainDF %>%
     'Value')  %>%
   group_by(Region,Station,Year,Month) %>%
   summarise(mean_temp = mean(Value,na.rm = TRUE))%>%
-  filter(!is.na(Year))%>%
-  filter(Year == 2019)
+  filter(!is.na(Year))
 
 rainfall$mean_temp = temperature$mean_temp
 ```
 
 ```{r eruptions, echo=FALSE}
-# inputPanel(
-#   selectInput("n_breaks", label = "Number of bins:",
-#               choices = c(10, 20, 35, 50), selected = 20),
-#   
-#   sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-#               min = 0.2, max = 2, value = 1, step = 0.2)
-# )
-
 # renderPlot({
-ggstatsplot::ggbetweenstats(
-  data = temperature,
-  x = Month,
-  y = mean_temp,
-  title = "Monthly Temperature",
-  ggtheme = ggthemes::theme_fivethirtyeight(),
-  ggstatsplot.layer = FALSE,
-  messages = FALSE
-) # further modification outside of ggstatsplot
-# })
+# ggstatsplot::ggbetweenstats(
+#   data = temperature,
+#   x = Month,
+#   y = mean_temp,
+#   title = "Monthly Temperature",
+#   ggtheme = ggthemes::theme_fivethirtyeight(),
+#   ggstatsplot.layer = FALSE,
+#   messages = FALSE
+# ) # further modification outside of ggstatsplot
+
 ```
 
 
 ```{r}
-# mean_r <- aggregate(mean_rain ~ Month, rainfall, mean)
-# 
-# mean_r <- round(mean_r,2)
-fun_mean <- function(x){
-  return(data.frame(y=round(mean(x),2),label=round(mean(x,na.rm=T),2)))}
+fun_mean <- function(x) {
+  return(data.frame(y = round(mean(x), 2), label = round(mean(x, na.rm = T), 2)))
+}
 
 rain <- ggplot(rainfall, aes(factor(Month), mean_rain))
 
-rain + geom_violin(fill="lightblue")+
-  geom_boxplot(width=0.1, color="white", alpha=0.2)+  stat_summary(fun=mean, colour="darkred", geom="point",
-                                                                   shape=18, size=3,show.legend = FALSE)+stat_summary(fun.data = fun_mean, geom="text", vjust=-0.9, size=3.5)+   ggtitle ("Rainfall distribution by month") +  xlab("Month") +  ylab ("Average Rainfall ( mm )")
+rain + geom_violin(fill = "lightblue") +
+        geom_boxplot(width = 0.1,
+               color = "white",
+               alpha = 0.2) +  stat_summary(
+                 fun = mean,
+                 colour = "darkred",
+                 geom = "point",
+                 shape =
+                   18,
+                 size = 3,
+                 show.legend = FALSE
+               ) + stat_summary(
+                 fun.data = fun_mean,
+                 geom = "text",
+                 vjust = -0.9,
+                 size = 3.5
+               ) + ggtitle ("Rainfall distribution by month") + xlab("Month") + ylab("Average Rainfall ( mm )")
 ```
 
 
@@ -137,7 +135,7 @@ ggstatsplot::ggscatterstats(
 ```
 
 ```{r}
-ggplot(temperature, aes(x = mean_temp, y = Month, fill = stat(x))) +
+temp <- ggplot(temperature, aes(x = mean_temp, y = Month, fill = stat(x))) +
   geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, gradient_lwd = 1.) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_discrete(expand = expansion(mult = c(0.01, 0.25))) +
@@ -148,6 +146,10 @@ ggplot(temperature, aes(x = mean_temp, y = Month, fill = stat(x))) +
   ) +
   theme_ridges(font_size = 13, grid = TRUE) + 
   theme(axis.title.y = element_blank())
+tmp <- temperature %>% 
+filter(Year == 2018)
+
+temp+xlim(min(tmp$mean_temp, na.rm=TRUE)-1,max(tmp$mean_temp, na.rm=TRUE)+1)
 ```
 
 ```{r}
@@ -166,7 +168,7 @@ rf <- ggplot(rainfall, aes(x = mean_rain, y = factor(Month), fill = stat(x))) +
 tmp <- rainfall %>% 
 filter(Year == 2018)
 
-rf+xlim(0,30)
+rf+xlim(0,max(tmp$mean_rain, na.rm=TRUE)+5)
 
 ```
 

@@ -162,13 +162,21 @@ server <- function(input, output) {
       theme(legend.position = "None")
     
     xdensity <-
+<<<<<<< HEAD
       ggplot(tanny4(), aes(x = mean_rain, fill = '#E69F00')) +
+=======
+      ggplot(na.omit(masterDF), aes(x = mean_rain, fill = '#E69F00')) +
+>>>>>>> e6b9b5efbdfb637b5e725e2ebade80b7336f410e
       geom_density(alpha = .5) +
       scale_fill_manual(values = c('#E69F00')) +
       theme(legend.position = "none")
     
     ydensity <-
+<<<<<<< HEAD
       ggplot(tanny4(), aes(y = mean_temp, fill = '#E69F00')) +
+=======
+      ggplot(na.omit(masterDF), aes(y = mean_temp, fill = '#E69F00')) +
+>>>>>>> e6b9b5efbdfb637b5e725e2ebade80b7336f410e
       geom_density(alpha = .5) +
       scale_fill_manual(values = c('#999999', '#E69F00')) +
       theme(legend.position = "none")
