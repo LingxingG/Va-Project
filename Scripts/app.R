@@ -15,7 +15,8 @@ packages = c(
   'ggridges',
   "gridExtra",
   "htmlwidgets",
-  "shinythemes"
+  "shinythemes",
+  "forcats"
 )
 
 for (p in packages) {
@@ -72,12 +73,9 @@ dashboard1 <- tabItem(tabName = "dashboard1",
 dashboard2 <- tabItem(tabName = "dashboard2",
                       fluidPage(theme = shinytheme("united"),
                                 title = "mmap",
-                               fluidRow(
-                                 plotOutput("tanny1")
-                               ),
-                               br(),
-                               fluidRow(
-                               )))
+                                fluidRow(plotOutput("tanny1")
+                               )
+                               ))
 
 dashboard3 <- tabItem(tabName = "dashboard3",
                       fluidPage(theme = shinytheme("united"),
@@ -120,7 +118,12 @@ temperature <- mainDF %>%
   group_by(Region, SZ, Station, Year, Month) %>%
   summarise(mean_temp = mean(Value, na.rm = TRUE))
 
-masterDF <- rainfall
+masterDF <- rainfall %>%
+  mutate(Month = fct_relevel(Month, 
+                             "Jan","Feb","Mar",
+                             "Apr","May","Jun",
+                             "Jul","Aug","Sep",
+                             "Oct","Nov","Dec"))
 masterDF$mean_temp = temperature$mean_temp
 
 ######################### 3.1 define customer function ##########################
@@ -133,10 +136,7 @@ server <- function(input, output) {
       geom_point() + 
       scale_color_manual(values = c('#999999')) + 
       theme(legend.position=c(0,1), legend.justification=c(0,1))
-    # scatterPlot
-    
-    # scatter plot of x and y variables
-    # color by groups
+
     xdensity <- ggplot(masterDF, aes(x= mean_rain, fill='#E69F00')) + 
       geom_density(alpha=.5) + 
       scale_fill_manual(values = c('#E69F00')) + 
@@ -204,7 +204,7 @@ server <- function(input, output) {
   })
   #----------------------------------------dashboard 2---------------------------------------
   output$tanny1 <- renderPlot({
-    rain <- ggplot(masterDF, aes(factor(Month), mean_rain))
+    rain <- ggplot(na.omit(masterDF), aes(factor(Month), mean_rain))
     rain + geom_violin(fill = "lightblue") +
       geom_boxplot(width = 0.1,
                    color = "white",
@@ -233,10 +233,7 @@ server <- function(input, output) {
   })
   
   output$sMonth <- renderUI({
-    Month_choices <- c("Jan","Feb","Mar",
-                            "Apr","May","Jun",
-                            "Jul","Aug","Sep",
-                            "Oct","Nov","Dec")
+    Month_choices <- unique(masterDF$Month)
     selectInput(
       inputId = "MonthLX",
       label = "Month:",
@@ -250,9 +247,8 @@ server <- function(input, output) {
     filter(Year == 2019) %>%
     filter(Month == 'Jan')
   tmp <- left_join(mpsz, tmp,
-                   by = c("SUBZONE_N" = "SZ"))
-  
-  tmp <- st_transform(tmp, 4326)
+                   by = c("SUBZONE_N" = "SZ")) %>%
+         st_transform(4326)
   
   # show rain map
   output$lxmap = renderLeaflet({
@@ -287,8 +283,8 @@ server <- function(input, output) {
          filter(Month == MONTH)
         
        tmp_new <- left_join(mpsz, tmp_new,
-                            by = c("SUBZONE_N" = "SZ"))
-       tmp_new <- st_transform(tmp_new, 4326)
+                            by = c("SUBZONE_N" = "SZ")) %>%
+                  st_transform(4326)
       
     }else{
       tmp_new <- tmp
