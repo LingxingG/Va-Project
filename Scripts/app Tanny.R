@@ -139,9 +139,9 @@ server <- function(input, output, session) {
     sliderInput(
       inputId = "YearTanny4",
       label = "Year:",
-      min = Year_min,
+      min = 2009,
       max = Year_max,
-      value = c(Year_min),
+      value = c(2009),
       step = 1,
       sep = "",
       animate = animationOptions(interval = 5000,
@@ -155,44 +155,56 @@ server <- function(input, output, session) {
   })
   
   output$tanny4 <- renderPlotly({
-    # scatterPlot <-
-    #   ggplot(tanny4(),
-    #          aes(x = mean_rain, y = mean_temp, color = Month)) +
-    #   geom_point() +
-    #   theme(legend.position = "None")
-    # db4scatter <- ggplotly(scatterPlot)
-    # 
-    # raindensity <-
-    #   ggplot(tanny4(), aes(x = mean_rain, fill = '#E69F00')) +
-    #   geom_density(alpha = .5) +
-    #   scale_fill_manual(values = c('#E69F00')) +
-    #   theme(legend.position = "none")
-    # db4rain <- ggplotly(raindensity)
-    
-    tempdensity <-
-      ggplot(tanny4(), aes(y = mean_temp, fill = '#E69F00')) +
+    scatterPlot <-
+      ggplot(tanny4(),
+             aes(x = mean_rain, y = mean_temp, color = Month)) +
+      geom_point() +
+      theme(legend.position = "None")
+    db4scatter <- ggplotly(scatterPlot)%>%
+                  layout(showlegend = FALSE)
+
+    raindensity <-
+      ggplot(tanny4(), aes(mean_rain, fill = '#E69F00')) +
       geom_density(alpha = .5) +
-      scale_fill_manual(values = c('#999999', '#E69F00')) +
+      scale_fill_manual(values = c('#E69F00')) +
+      theme(legend.position = "none")
+    db4rain <- ggplotly(raindensity)
+
+    tempdensity <-
+      ggplot(tanny4(), aes(mean_temp, fill = '#E69F00')) +
+      geom_density(alpha = .5) +
+      scale_fill_manual(values = c('#999999')) +
       theme(legend.position = "none")
     db4temp <- ggplotly(tempdensity)
 
-    # blankPlot <- ggplot() + geom_blank(aes(1, 1)) +
-    #   theme(
-    #     plot.background = element_blank(),
-    #     panel.grid.major = element_blank(),
-    #     panel.grid.minor = element_blank(),
-    #     panel.border = element_blank(),
-    #     panel.background = element_blank(),
-    #     axis.title.x = element_blank(),
-    #     axis.title.y = element_blank(),
-    #     axis.text.x = element_blank(),
-    #     axis.text.y = element_blank(),
-    #     axis.ticks = element_blank()
-    #   )
-    # blankPlot <- ggplotly(blankPlot)
+    blankPlot <- ggplot() + geom_blank(aes(1, 1)) +
+      theme(
+        plot.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()
+      )
+    blankPlot <- ggplotly(blankPlot)
     
-    
-    # subplot(db4rain, blankPlot, db4scatter, db4temp, ncol = 2, nrows = 2, margin = 0.04, widths = c(4,1.4), heights = c(1.4,4))
+    db4 <-
+      subplot(
+        db4rain,
+        blankPlot,
+        db4scatter,
+        db4temp,
+        nrows = 2,
+        widths = c(0.8, 0.2),
+        heights = c(0.2, 0.8),
+        shareX = TRUE,
+        shareY = TRUE
+      )
+    # db4
     # grid.arrange(
     #   xdensity,
     #   blankPlot,
