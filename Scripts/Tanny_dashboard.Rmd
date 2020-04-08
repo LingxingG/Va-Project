@@ -44,7 +44,7 @@ rainfall<- mainDF %>%
   group_by(Region,Station,Year,Month) %>%
   summarise(mean_rain = mean(Value,na.rm = TRUE),
             total_rain = sum(Value, na.rm = TRUE))%>%
-  filter(!is.na(Year)) 
+  filter(Year==1983) 
 
 temperature<- mainDF %>%
   filter(str_detect(mainDF$Measurement,"Mean Temperature")) %>%
@@ -57,7 +57,7 @@ temperature<- mainDF %>%
     'Value')  %>%
   group_by(Region,Station,Year,Month) %>%
   summarise(mean_temp = mean(Value,na.rm = TRUE))%>%
-  filter(!is.na(Year))
+  filter(Year==1983)
 
 rainfall$mean_temp = temperature$mean_temp
 ```
@@ -135,7 +135,7 @@ ggstatsplot::ggscatterstats(
 ```
 
 ```{r}
-temp <- ggplot(temperature, aes(x = mean_temp, y = Month, fill = stat(x))) +
+temp <- ggplot(temperature, aes(x = mean_temp, y = factor(Month), fill = stat(x))) +
   geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, gradient_lwd = 1.) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_discrete(expand = expansion(mult = c(0.01, 0.25))) +
@@ -146,14 +146,12 @@ temp <- ggplot(temperature, aes(x = mean_temp, y = Month, fill = stat(x))) +
   ) +
   theme_ridges(font_size = 13, grid = TRUE) + 
   theme(axis.title.y = element_blank())
-tmp <- temperature %>% 
-filter(Year == 2018)
 
-temp+xlim(min(tmp$mean_temp, na.rm=TRUE)-1,max(tmp$mean_temp, na.rm=TRUE)+1)
+temp
 ```
 
 ```{r}
-rf <- ggplot(rainfall, aes(x = mean_rain, y = factor(Month), fill = stat(x))) +
+rf <- ggplot(rainfall, aes(x = mean_rain, y = Month, fill = stat(x))) +
   geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, gradient_lwd = 1.) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_discrete(expand = expand_scale(mult = c(0.01, 0.25))) +
@@ -165,11 +163,8 @@ rf <- ggplot(rainfall, aes(x = mean_rain, y = factor(Month), fill = stat(x))) +
   theme_ridges(font_size = 13, grid = TRUE) + 
   theme(axis.title.y = element_blank())
 
-tmp <- rainfall %>% 
-filter(Year == 2018)
 
-rf+xlim(0,max(tmp$mean_rain, na.rm=TRUE)+5)
-
+rf
 ```
 
 ```{r}
