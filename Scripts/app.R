@@ -4,7 +4,6 @@ packages = c(
   'tidyverse',
   'sf',
   'tmap',
-  'leaflet',
   'plotly',
   'shiny',
   'stringr',
@@ -15,6 +14,7 @@ packages = c(
   'ggridges',
   "gridExtra",
   "htmlwidgets",
+  'leaflet',
   "shinythemes",
   "forcats",
   "shinydashboard"
@@ -62,8 +62,8 @@ dashboard1 <- tabItem(tabName = "dashboard1",
                       fillPage(theme = shinytheme("united"),
                                title = "Tmap",
                                 fluidRow(
-                                  column(4, leafletOutput("lxmap")),
-                                  column(4, leafletOutput("lxmap2"))
+                                  column(4, tmapOutput("lxmap")),
+                                  column(4, tmapOutput("lxmap2"))
                                 ),
                                 br(),
                                 fluidRow(
@@ -132,7 +132,7 @@ masterDF$mean_temp = temperature$mean_temp
 ######################### 3.1 define customer function ##########################
 
 ### 3.1 import attribute data ###
-server <- function(input, output) {
+server <- function(input, output, session) {
   #----------------------------------------dashboard 4---------------------------------------
   output$tYear <- renderUI({
     Year_min <- min(rainfall[, "Year"], na.rm = TRUE)
@@ -282,7 +282,7 @@ server <- function(input, output) {
   tmp<-reactive({
     tmp2 <- masterDF %>%
       filter(Year == as.numeric(input$YearLX)) %>%
-    filter(Month == as.character(input$MonthLX))
+      filter(Month == as.character(input$MonthLX))
     
     tmp2 <- left_join(mpsz, tmp2,
                       by = c("SUBZONE_N" = "SZ")) %>%
