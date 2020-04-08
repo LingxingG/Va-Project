@@ -130,7 +130,6 @@ masterDF <- rainfall %>%
 masterDF$mean_temp = temperature$mean_temp
 
 ######################### 3.1 define customer function ##########################
-
 ### 3.1 import attribute data ###
 server <- function(input, output, session) {
   #----------------------------------------dashboard 4---------------------------------------
