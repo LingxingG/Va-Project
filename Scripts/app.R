@@ -59,37 +59,36 @@ sidebar <- dashboardSidebar(
 
 ### 2.1.1 dfine dashboard body elements ###
 dashboard1 <- tabItem(tabName = "dashboard1",
-                      fillPage(theme = shinytheme("united"),
-                               title = "Tmap",
-                                fluidRow(
-                                  column(4, tmapOutput("lxmap")),
-                                  column(4, tmapOutput("lxmap2"))
-                                ),
-                                br(),
-                                fluidRow(
-                                  column(4, uiOutput("sYear")),
-                                  column(4, uiOutput("sMonth"))
-                                )))
+                      fillPage(titlePanel("Ridge Plot"),
+                               fluidRow(
+                                 column(4, tmapOutput("lxmap")),
+                                 column(4, tmapOutput("lxmap2"))
+                               ),
+                               br(),
+                               fluidRow(
+                                 column(4, uiOutput("sYear")),
+                                 column(4, uiOutput("sMonth"))
+                               )))
+
 
 dashboard2 <- tabItem(tabName = "dashboard2",
-                      fluidPage(theme = shinytheme("united"),
-                                title = "mmap",
-                                fluidRow(plotOutput("tanny1")
-                               )
-                               ))
+                      fluidPage(titlePanel("Ridge Plot"),
+                                fluidRow(
+                                  uiOutput("tYear1"),
+                                  fluidRow(plotOutput("tanny1"))
+                                )))
 
 dashboard3 <- tabItem(tabName = "dashboard3",
-                      fluidPage(theme = shinytheme("united"),
-                                title = "mmap",
-                               fluidRow(
-                                 column(4, plotOutput("tanny2")),
-                                 column(4, plotOutput("tanny3"))
-                               )))
+                      fluidPage(titlePanel("Ridge Plot"),
+                                fluidRow(uiOutput("tYear3"),
+                                fluidRow(
+                                  column(6, plotOutput("tanny2",width="100%",height="400px")),
+                                  column(6, plotOutput("tanny3",width="100%",height="400px"))
+                                ))))
 
 dashboard4 <- tabItem(tabName = "dashboard4",
                       fluidPage(
-                        theme = shinytheme("united"),
-                        title = "mmap",
+                        titlePanel("Ridge Plot"),
                         fluidRow(),
                         fluidRow(plotOutput("tanny4")),
                         fluidRow(uiOutput("tYear"))
@@ -149,7 +148,6 @@ server <- function(input, output, session) {
     )
   })
   
-  
   tanny4 <- reactive({
     masterDF[masterDF$Year ==  as.numeric(input$YearTanny4),]
   })
@@ -199,43 +197,69 @@ server <- function(input, output, session) {
     )
   })
   #----------------------------------------dashboard 3---------------------------------------
+  output$tYear3 <- renderUI({
+    Year_max <- max(temperature[, "Year"], na.rm = TRUE)
+    sliderInput(
+      inputId = "YearTanny3",
+      label = "Year:",
+      min = 2009,
+      max = Year_max,
+      value = 2009,
+      step = 1,
+      sep = "",
+      animate = animationOptions(interval = 5000,
+                                 loop = FALSE)
+    )
+  })
+  
   output$tanny2 <- renderPlot({
-    temp <- ggplot(na.omit(masterDF), aes(x = mean_temp, y = Month, fill = stat(x))) +
-      geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, gradient_lwd = 1.) +
+    masterDF %>%
+      filter(Year == as.numeric(input$YearTanny3)) %>%
+      ggplot(aes(x = mean_temp, y = Month, fill = stat(x))) +
+      geom_density_ridges_gradient(scale = 3,
+                                   rel_min_height = 0.01,
+                                   gradient_lwd = 1.) +
       scale_x_continuous(expand = c(0, 0)) +
       scale_y_discrete(expand = expansion(mult = c(0.01, 0.25))) +
       scale_fill_viridis_c(name = "Temp. [C]", option = "B") +
-      labs(
-        title = 'Temperatures in Lincoln NE',
-        subtitle = 'Mean temperatures (Celcius) by month'
-      ) +
-      theme_ridges(font_size = 13, grid = TRUE) + 
-      theme(axis.title.y = element_blank())
-    tmp <- masterDF %>% 
-      filter(Year == 2018)
-    
-    temp+xlim(min(tmp$mean_temp, na.rm=TRUE)-1,max(tmp$mean_temp, na.rm=TRUE)+1)
+      labs(title = 'Temperatures',
+           subtitle = 'Mean temperatures (Celcius) by month') +
+      theme_ridges(font_size = 13, grid = TRUE) +
+      theme(axis.title.y = element_blank()) + xlim(min(masterDF$mean_temp, na.rm = TRUE) - 1,
+                                                   max(masterDF$mean_temp, na.rm = TRUE) + 1)
   })
   
   output$tanny3 <- renderPlot({
-    rf <- ggplot(na.omit(masterDF), aes(x = mean_rain, y = factor(Month), fill = stat(x))) +
-      geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, gradient_lwd = 1.) +
+    masterDF %>%
+      filter(Year == as.numeric(input$YearTanny3)) %>%
+      ggplot(aes(x = mean_rain, y = factor(Month), fill = stat(x))) +
+      geom_density_ridges_gradient(scale = 3,
+                                   rel_min_height = 0.01,
+                                   gradient_lwd = 1.) +
       scale_x_continuous(expand = c(0, 0)) +
       scale_y_discrete(expand = expand_scale(mult = c(0.01, 0.25))) +
-      scale_fill_viridis_c(name = "Rain Precipitation (mm)", option = "D") +
-      labs(
-        title = 'Temperatures in Lincoln NE',
-        subtitle = 'Mean Rainfall Precipiration (mm) by month'
-      ) +
-      theme_ridges(font_size = 13, grid = TRUE) + 
+      scale_fill_viridis_c(name = "Precipitation (mm)", option = "D") +
+      labs(title = 'Rainfal',
+           subtitle = 'Mean Rainfall Precipitation (mm) by month') +
+      theme_ridges(font_size = 13, grid = TRUE) +
       theme(axis.title.y = element_blank())
-    
-    tmp <- masterDF %>% 
-      filter(Year == 2018)
-    
-    rf+xlim(0,max(tmp$mean_rain, na.rm=TRUE)+5)
   })
+  
   #----------------------------------------dashboard 2---------------------------------------
+  output$tYear1 <- renderUI({
+    Year_max <- max(temperature[, "Year"], na.rm = TRUE)
+    sliderInput(
+      inputId = "YearTanny1",
+      label = "Year:",
+      min = 2009,
+      max = Year_max,
+      value = 2009,
+      step = 1,
+      sep = "",
+      animate = animationOptions(interval = 5000,
+                                 loop = FALSE)
+    )
+  })
   output$tanny1 <- renderPlot({
     rain <- ggplot(na.omit(masterDF), aes(factor(Month), mean_rain, fill =factor(Month)))
     rain + geom_violin(fill = "lightblue") +
