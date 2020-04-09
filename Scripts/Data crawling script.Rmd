@@ -13,7 +13,8 @@ packages <-
   'sf',
   'stringr',
   'lubridate',
-  'dplyr')
+  'dplyr',
+  'zoo')
 
 for (p in packages) {
   if (!require(p, character.only = T)) {
@@ -122,5 +123,52 @@ if (file_test("-f", file_location )){
   write_csv(DT,file_location,col_names = TRUE)
   print("File Created!")
 }
+```
+
+```{r}
+mpsz <- st_read(dsn = "geospatial",
+                layer = "MP14_SUBZONE_WEB_PL")
+mainDF <- read.csv("merged data\\dataset.csv")
+mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%B-%d")
+```
+```{r}
+# Mastertemp <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+#   select(Region,Year, date, Value) %>%
+#   group_by(Year,Region,date) %>%
+#   summarise(mean_temperaturec  = mean(Value, na.rm = TRUE))
+# 
+# temperature_max <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Maximum Temperature")) %>%
+#   select(Region,Year, date, Value) %>%
+#   group_by(Year,Region,date) %>%
+#   summarise(max_temperaturec = mean(Value, na.rm = TRUE))
+# 
+# temperature_min <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Minimum Temperature")) %>%
+#   select(Region, Year, date, Value) %>%
+#   group_by(Year, Region, date) %>%
+#   summarise(min_temperaturec = mean(Value, na.rm = TRUE))
+# 
+# 
+# Mastertemp$max_temperaturec = temperature_max$max_temperaturec
+# Mastertemp$min_temperaturec = temperature_min$min_temperaturec
+# 
+# Mastertemp <- Mastertemp %>%
+#   na.omit()
+
+
+Mastertemp2 <- mainDF
+Mastertemp2$Month = match(Mastertemp2$Month, month.abb)
+Mastertemp2$date = as.Date(with(Mastertemp2, paste(Day,Month, Year, sep="-")), "%d-%m-%Y")
+
+Mastertemp2 <- Mastertemp2 %>%
+  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+  # transform(date = as.yearmon(date, frac = 1)) %>%
+  group_by(Year, Month) %>%
+  summarise(med_temp = median(Value, na.rm = TRUE),
+            min_temp = min(Value, na.rm = TRUE),
+            max_temp = max(Value, na.rm = TRUE)) %>%
+   na.omit()
 ```
 

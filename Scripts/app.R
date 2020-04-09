@@ -40,7 +40,8 @@ css <- "
 }
 "
 ######################### 2. define dashboard UI ##########################
-### 2.1 define dashboard elemets ###
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~ 2.1 define dashboard elemets #~~~~~~~~~~~~~~~~~~~~~~~~~ 
 header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 
 sidebar <- dashboardSidebar(
@@ -69,11 +70,16 @@ sidebar <- dashboardSidebar(
       "Weathers Radials",
       tabName = "dashboard5",
       icon = icon("dashboard")
+    ),
+    menuItem(
+      "Weathers Trends",
+      tabName = "dashboard6",
+      icon = icon("dashboard")
     )
   )
 )
 
-### 2.1.1 dfine dashboard body elements ###
+#~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.1 define dashboard body elements ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
@@ -121,25 +127,38 @@ dashboard5 <- tabItem(tabName = "dashboard5",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         titlePanel("Weathers Radials"),
-                        fluidRow(column(4,     
-                                        sliderInput(
-                                          inputId = "hc_Year",
-                                          label = "Year:",
-                                          min = 1982,
-                                          max = 2019,
-                                          value = 1982,
-                                          step = 1,
-                                          sep = "",
-                                          animate = animationOptions(interval = 5000,
-                                                                     loop = FALSE))
-                                        ),
-                                 column(4, uiOutput('hcRegion'))),
-                        fluidRow(column(6, withSpinner(
-                          highchartOutput("hc", width = "100%", height = "600px")
-                        )))
+                        fluidRow(column(
+                          4,
+                          sliderInput(
+                            inputId = "hc_Year",
+                            label = "Year:",
+                            min = 1982,
+                            max = 2019,
+                            value = 1982,
+                            step = 1,
+                            sep = "",
+                            animate = animationOptions(interval = 5000,
+                                                       loop = FALSE)
+                          )
+                        ),
+                        column(4, uiOutput('hcRegion'))),
+                        fluidRow(column(
+                          6,
+                          highchartOutput("hc", width = "100%", height = "550px")
+                        ))
                       ))
 
-### 2.1.2 Fill in dashboard elements ####
+
+dashboard6 <- tabItem(tabName = "dashboard6",
+                      fluidPage(
+                        tags$style(type = "text/css", css),
+                        titlePanel("Weathers Trend"),
+                        fluidRow(withSpinner(
+                          highchartOutput("hc2", width = "100%", height = "550px")
+                        ))
+                      ))
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~ 2.1.2 Fill in dashboard elements ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 body <- dashboardBody(
   use_waiter(),
   waiter_show_on_load(tagList(spin_fading_circles(),
@@ -149,14 +168,14 @@ body <- dashboardBody(
     dashboard2,
     dashboard3,
     dashboard4,
-    dashboard5
+    dashboard5,
+    dashboard6
   )
 )
 
 ui <- dashboardPage(header, sidebar, body)
 
-######################### 3. define input output ##########################
-### 3.1 import attribute data ###
+# ~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.3 import attribute data ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
 mainDF <- read.csv("merged data\\dataset.csv")
@@ -167,8 +186,6 @@ rainfall3 <- mainDF %>%
   group_by(Region, SZ, Station,Year, Month) %>%
   summarise(mean_rain = mean(Value, na.rm = TRUE))
 
-
-# declare base dataframe to use for both rain and temp
 rainfall <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
   group_by(Region, SZ, Station,Year, Month) %>%
@@ -185,10 +202,9 @@ masterDF <- rainfall %>%
                              "Apr","May","Jun",
                              "Jul","Aug","Sep",
                              "Oct","Nov","Dec"))
-
 masterDF$mean_temp = temperature$mean_temp
 
-#--------------------------------Weathers Radials-------------------------------------
+#--------------Weathers Radials------------
 Mastertemp <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
   select(Region,Year, date, Value) %>%
@@ -207,18 +223,55 @@ temperature_min <- mainDF %>%
   group_by(Year, Region, date) %>%
   summarise(min_temperaturec = mean(Value, na.rm = TRUE))
 
+
 Mastertemp$max_temperaturec = temperature_max$max_temperaturec
 Mastertemp$min_temperaturec = temperature_min$min_temperaturec
 
 Mastertemp <- Mastertemp %>%
   na.omit()
+
 Year_min <- min(Mastertemp[, "Year"], na.rm = TRUE)
 Year_max <- max(Mastertemp[, "Year"], na.rm = TRUE)
+
+#--------------Weathers Trendss------------
+Mastertemp2 <- mainDF
+Mastertemp2$Month = match(Mastertemp2$Month, month.abb)
+Mastertemp2$date = as.Date(with(Mastertemp2, paste(Day,Month, Year, sep="-")), "%d-%m-%Y")
+
+Mastertemp2 <- Mastertemp2 %>%
+  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+  transform(date = as.yearmon(date)) %>%
+  group_by(date) %>%
+  summarise(med_temp = median(Value, na.rm = TRUE),
+            min_temp = min(Value, na.rm = TRUE),
+            max_temp = max(Value, na.rm = TRUE)) %>%
+  na.omit()
+
+######################### 3. define input output ##########################
 server <- function(input, output, session) {
+  #----------------------------------------dashboard 6---------------------------------------
+  
+  output$hc2 <- renderHighchart({
+    x <- c("Max","Median","Min")
+    y <- sprintf("{point.%s}", c("max_temp","med_temp","min_temp"))
+    tltip <- tooltip_table(x, y)
+    
+    hchart(Mastertemp2, type = "columnrange",
+           hcaes(x = date, low = min_temp, high = max_temp,
+                 color = med_temp)) %>% 
+      hc_yAxis(tickPositions = c(10, 30, 45),
+               gridLineColor = "#B71C1C",
+               labels = list(format = "{value} C", useHTML = TRUE)) %>% 
+      hc_tooltip(
+        useHTML = TRUE,
+        headerFormat = as.character(tags$small("{point.x: %Y-%b}")),
+        pointFormat = tltip
+      ) %>% 
+      hc_add_theme(hc_theme_db())
+  })
   
   #----------------------------------------dashboard 5---------------------------------------
   output$hcRegion <- renderUI({
-    
     tmp <- Mastertemp %>%
       filter(Year == as.numeric(input$hc_Year))
     selectInput(
@@ -234,11 +287,11 @@ server <- function(input, output, session) {
     y <- sprintf("{point.%s}", c("min_temperaturec", "mean_temperaturec", "max_temperaturec"))
     tltip <- tooltip_table(x, y)
       
-    Mastertemp <- Mastertemp %>%
+    Mastertemp2 <- Mastertemp %>%
       filter(Region == as.character(input$hc_Region)) %>%
       filter(Year == as.numeric(input$hc_Year))
     
-    hchart(Mastertemp, type = "columnrange",
+    hchart(Mastertemp2, type = "columnrange",
            hcaes(x = date, low = min_temperaturec, high = max_temperaturec,
                  color = mean_temperaturec)) %>% 
       hc_chart(polar = TRUE) %>%
