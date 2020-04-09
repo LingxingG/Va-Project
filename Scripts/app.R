@@ -19,7 +19,9 @@ packages = c(
   "ggrepel",
   "forcats",
   "shinydashboard",
-  'waiter'
+  'waiter',
+  'highcharter',
+  'shinycssloaders'
 )
 
 for (p in packages) {
@@ -37,9 +39,7 @@ css <- "
   content: 'Loading ...'; }
 }
 "
-
 ######################### 2. define dashboard UI ##########################
-
 ### 2.1 define dashboard elemets ###
 header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 
@@ -63,6 +63,11 @@ sidebar <- dashboardSidebar(
     menuItem(
       "Dashboard 4",
       tabName = "dashboard4",
+      icon = icon("dashboard")
+    ),
+    menuItem(
+      "Weathers Radials",
+      tabName = "dashboard5",
       icon = icon("dashboard")
     )
   )
@@ -112,6 +117,28 @@ dashboard4 <- tabItem(tabName = "dashboard4",
                         fluidRow(plotlyOutput("tanny4")),
                       ))
 
+dashboard5 <- tabItem(tabName = "dashboard5",
+                      fluidPage(
+                        tags$style(type = "text/css", css),
+                        titlePanel("Weathers Radials"),
+                        fluidRow(column(4,     
+                                        sliderInput(
+                                          inputId = "hc_Year",
+                                          label = "Year:",
+                                          min = 1982,
+                                          max = 2019,
+                                          value = 1982,
+                                          step = 1,
+                                          sep = "",
+                                          animate = animationOptions(interval = 5000,
+                                                                     loop = FALSE))
+                                        ),
+                                 column(4, uiOutput('hcRegion'))),
+                        fluidRow(column(6, withSpinner(
+                          highchartOutput("hc", width = "100%", height = "600px")
+                        )))
+                      ))
+
 ### 2.1.2 Fill in dashboard elements ####
 body <- dashboardBody(
   use_waiter(),
@@ -121,16 +148,25 @@ body <- dashboardBody(
     dashboard1,
     dashboard2,
     dashboard3,
-    dashboard4
+    dashboard4,
+    dashboard5
   )
 )
 
-ui <- dashboardPage(header, sidebar, body, skin="black")
+ui <- dashboardPage(header, sidebar, body)
 
 ######################### 3. define input output ##########################
+### 3.1 import attribute data ###
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
 mainDF <- read.csv("merged data\\dataset.csv")
+mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
+
+rainfall3 <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Region, SZ, Station,Year, Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
 
 # declare base dataframe to use for both rain and temp
 rainfall <- mainDF %>%
@@ -149,11 +185,72 @@ masterDF <- rainfall %>%
                              "Apr","May","Jun",
                              "Jul","Aug","Sep",
                              "Oct","Nov","Dec"))
+
 masterDF$mean_temp = temperature$mean_temp
 
-######################### 3.1 define customer function ##########################
-### 3.1 import attribute data ###
+#--------------------------------Weathers Radials-------------------------------------
+Mastertemp <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  select(Region,Year, date, Value) %>%
+  group_by(Year,Region,date) %>%
+  summarise(mean_temperaturec  = mean(Value, na.rm = TRUE))
+
+temperature_max <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Maximum Temperature")) %>%
+  select(Region,Year, date, Value) %>%
+  group_by(Year,Region,date) %>%
+  summarise(max_temperaturec = mean(Value, na.rm = TRUE))
+
+temperature_min <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Minimum Temperature")) %>%
+  select(Region, Year, date, Value) %>%
+  group_by(Year, Region, date) %>%
+  summarise(min_temperaturec = mean(Value, na.rm = TRUE))
+
+Mastertemp$max_temperaturec = temperature_max$max_temperaturec
+Mastertemp$min_temperaturec = temperature_min$min_temperaturec
+
+Mastertemp <- Mastertemp %>%
+  na.omit()
+Year_min <- min(Mastertemp[, "Year"], na.rm = TRUE)
+Year_max <- max(Mastertemp[, "Year"], na.rm = TRUE)
 server <- function(input, output, session) {
+  
+  #----------------------------------------dashboard 5---------------------------------------
+  output$hcRegion <- renderUI({
+    
+    tmp <- Mastertemp %>%
+      filter(Year == as.numeric(input$hc_Year))
+    selectInput(
+      inputId = "hc_Region",
+      label = "Select Region:",
+      choices = unique(tmp$Region),
+      selected = unique(tmp$Region)[1]
+    )
+  })
+  
+  output$hc <- renderHighchart({
+    x <- c("Min", "Mean", "Max")
+    y <- sprintf("{point.%s}", c("min_temperaturec", "mean_temperaturec", "max_temperaturec"))
+    tltip <- tooltip_table(x, y)
+      
+    Mastertemp <- Mastertemp %>%
+      filter(Region == as.character(input$hc_Region)) %>%
+      filter(Year == as.numeric(input$hc_Year))
+    
+    hchart(Mastertemp, type = "columnrange",
+           hcaes(x = date, low = min_temperaturec, high = max_temperaturec,
+                 color = mean_temperaturec)) %>% 
+      hc_chart(polar = TRUE) %>%
+      hc_yAxis( max = 40, min = 15, labels = list(format = "{value} C"),
+                showFirstLabel = FALSE) %>% 
+      hc_xAxis(
+        title = list(text = ""), gridLineWidth = 0.5,
+        labels = list(format = "{value: %b}")) %>% 
+      hc_tooltip(useHTML = TRUE, pointFormat = tltip,
+                 headerFormat = as.character(tags$small("{point.x:%d %B, %Y}")))
+  })
+  
   #----------------------------------------dashboard 4---------------------------------------
   output$tYear <- renderUI({
     Year_min <- min(rainfall[, "Year"], na.rm = TRUE)
@@ -260,12 +357,6 @@ server <- function(input, output, session) {
       theme(axis.title.y = element_blank()) + xlim(min(masterDF$mean_temp, na.rm = TRUE) - 1,
                                                    max(masterDF$mean_temp, na.rm = TRUE) + 1)
   })
-  
-  
-  
-  
-  
-  
   
   output$tanny3 <- renderPlot({
     masterDF %>%
