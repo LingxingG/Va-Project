@@ -52,7 +52,7 @@ sidebar <- dashboardSidebar(
       icon = icon("dashboard")
     ),
     menuItem(
-      "Dashboard 2",
+      "Violin Plot",
       tabName = "dashboard2",
       icon = icon("dashboard")
     ),
@@ -62,7 +62,7 @@ sidebar <- dashboardSidebar(
       icon = icon("dashboard")
     ),
     menuItem(
-      "Dashboard 4",
+      "Density Plot",
       tabName = "dashboard4",
       icon = icon("dashboard")
     ),
@@ -83,7 +83,7 @@ sidebar <- dashboardSidebar(
 dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Ridge Plot"),
+                        titlePanel("Map Plot"),
                         fluidRow(column(4, tmapOutput("lxmap")),
                                  column(4, tmapOutput("lxmap2"))),
                         br(),
@@ -94,9 +94,20 @@ dashboard1 <- tabItem(tabName = "dashboard1",
 dashboard2 <- tabItem(tabName = "dashboard2",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Ridge Plot"),
-                        fluidRow(uiOutput("tYear1"),
-                                 fluidRow(plotOutput("tanny1")))
+                        titlePanel("Violin Plot"),
+                        fluidRow(column(5, uiOutput("tYear1")),
+                                 column(
+                                   5,
+                                   selectInput(
+                                     inputId = "db2type",
+                                     label = "Please Select:",
+                                     choices = c("Rainfall", "Temperature"),
+                                     selected = "Mean Rainfall"
+                                   )
+                                 )),
+                        fluidRow(plotlyOutput(
+                          "tanny1", width = "80%", height = "550px"
+                        ))
                       ))
 
 dashboard3 <- tabItem(tabName = "dashboard3",
@@ -117,7 +128,7 @@ dashboard3 <- tabItem(tabName = "dashboard3",
 dashboard4 <- tabItem(tabName = "dashboard4",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Ridge Plot"),
+                        titlePanel("Density Plot"),
                         fluidRow(),
                         fluidRow(uiOutput("tYear")),
                         fluidRow(plotlyOutput("tanny4")),
@@ -249,15 +260,16 @@ Mastertemp2 <- Mastertemp2 %>%
 
 Mastertemp2$date = as.Date(with(Mastertemp2, paste(Year,month.abb[Month], Day, sep=" ")), "%Y %b %d")
 
+smooth_vals = predict(loess(med_temp~Year,Mastertemp2))
+Mastertemp2$smooth_vals <- round(smooth_vals,2)
 
 ######################### 3. define input output ##########################
 server <- function(input, output, session) {
   #----------------------------------------dashboard 6---------------------------------------
   
   output$hc2 <- renderHighchart({
-  
-    x <- c("Max","Median","Min")
-    y <- sprintf("{point.%s}", c("max_temp","med_temp","min_temp"))
+    x <- c("Max","Median","Min","Predict")
+    y <- sprintf("{point.%s}", c("max_temp","med_temp","min_temp","smooth_vals"))
     tltip <- tooltip_table(x, y)
     
     median_tmp <- mainDF %>%
@@ -268,16 +280,17 @@ server <- function(input, output, session) {
     hchart(Mastertemp2, type = "columnrange",
            hcaes(x = date, low = min_temp, high = max_temp,
                  color = med_temp)) %>% 
-      hc_yAxis(tickPositions = c(10, med, 50),
+      hc_yAxis(tickPositions = c(10, med, 40),
                gridLineColor = "#B71C1C",
                labels = list(format = "{value} C", useHTML = TRUE)) %>% 
+      hc_add_series(data = Mastertemp2,type = "line", hcaes(x = date, y = smooth_vals),
+                    name = "Fit", id = "fit") %>%
       hc_tooltip(
         useHTML = TRUE,
         headerFormat = as.character(tags$small("{point.x: %Y %b}")),
         pointFormat = tltip
       ) %>% 
       hc_add_theme(hc_theme_db())
-    
   })
   
   #----------------------------------------dashboard 5---------------------------------------
@@ -343,7 +356,7 @@ server <- function(input, output, session) {
                y = round(mean_temp, 2),
                color = Month
              )) +
-      geom_point(aes(text=map(paste('<b>letter:</b>', mean_rain, '<br/>', '<b>Letter:</b>', mean_temp), HTML))) +
+      geom_point() +
       theme(legend.position = "none",
             legend.title = element_blank()) +
       labs(y = " Mean Temperature (\u00B0C)", x = "Rain Precipitation (mm)")
@@ -415,7 +428,7 @@ server <- function(input, output, session) {
       scale_y_discrete(expand = expansion(mult = c(0.01, 0.25))) +
       scale_fill_viridis_c(name = "Temperature (\u00B0C)", option = "B") +
       labs(title = 'Temperatures',
-           subtitle = 'Mean temperatures (Celcius) by month') +
+           subtitle = 'Mean temperatures (Celcius) by Month') +
       theme_ridges(font_size = 13, grid = TRUE) +
       theme(axis.title.y = element_blank()) + xlim(min(masterDF$mean_temp, na.rm = TRUE) - 1,
                                                    max(masterDF$mean_temp, na.rm = TRUE) + 1)
@@ -432,7 +445,7 @@ server <- function(input, output, session) {
       scale_y_discrete(expand = expand_scale(mult = c(0.01, 0.25))) +
       scale_fill_viridis_c(name = "Precipitation (mm)", option = "D") +
       labs(title = 'Rainfal',
-           subtitle = 'Mean Rainfall Precipitation (mm) by month') +
+           subtitle = 'Mean Rainfall Precipitation (mm) by Month') +
       theme_ridges(font_size = 13, grid = TRUE) +
       theme(axis.title.y = element_blank())
   })
@@ -452,18 +465,23 @@ server <- function(input, output, session) {
                                  loop = FALSE)
     )
   })
-  output$tanny1 <- renderPlot({
-    rain <- ggplot(na.omit(masterDF), aes(factor(Month), mean_rain, fill =factor(Month)))
-    rain + geom_violin(fill = "lightblue") +
+  output$tanny1 <- renderPlotly({
+    rain <- ggplot(masterDF %>%
+                     na.omit() %>%
+                     filter(Year == as.numeric(input$YearTanny1)),
+                   aes(factor(Month), if(input$db2type == "Rainfall"){mean_rain}else{mean_temp})) +
+      geom_violin(color = "#B2BCC2",
+                  add = "boxplot",
+                  fill = NA) +
       geom_boxplot(width = 0.1,
-                   color = "white",
-                   alpha = 0.2)+
-      ggtitle ("Rainfall distribution by month") + 
-      theme(legend.position="none") +
-      xlab("Month") + 
-      ylab("Average Rainfall ( mm )")
+                   fill = "#4863A0",
+                   alpha = 0.2) +
+      theme(legend.position = "none") +
+      xlab("") +
+      ylab(if(input$db2type == "Rainfall"){"Average Rainfall ( mm )"}else{"Average temperature (\u00B0C)"})
+    
+    rain <- ggplotly(rain)
   })
-  
   #----------------------------------------dashboard 1----------------------------------------
   # render filters in UI 
   output$sYear <- renderUI({
