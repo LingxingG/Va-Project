@@ -268,6 +268,7 @@ server <- function(input, output, session) {
         pointFormat = tltip
       ) %>% 
       hc_add_theme(hc_theme_db())
+    
   })
   
   #----------------------------------------dashboard 5---------------------------------------
