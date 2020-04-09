@@ -154,7 +154,7 @@ dashboard6 <- tabItem(tabName = "dashboard6",
                         tags$style(type = "text/css", css),
                         titlePanel("Weathers Trend"),
                         fluidRow(withSpinner(
-                          highchartOutput("hc2", width = "100%", height = "550px")
+                          highchartOutput("hc2", width = "80%", height = "550px")
                         ))
                       ))
 
@@ -240,31 +240,40 @@ Mastertemp2$date = as.Date(with(Mastertemp2, paste(Day,Month, Year, sep="-")), "
 
 Mastertemp2 <- Mastertemp2 %>%
   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
-  transform(date = as.yearmon(date)) %>%
-  group_by(date) %>%
+  group_by(Year, Month) %>%
   summarise(med_temp = median(Value, na.rm = TRUE),
             min_temp = min(Value, na.rm = TRUE),
             max_temp = max(Value, na.rm = TRUE)) %>%
-  na.omit()
+  na.omit() %>%
+  mutate(Day = 1)
+
+Mastertemp2$date = as.Date(with(Mastertemp2, paste(Year,month.abb[Month], Day, sep=" ")), "%Y %b %d")
+
 
 ######################### 3. define input output ##########################
 server <- function(input, output, session) {
   #----------------------------------------dashboard 6---------------------------------------
   
   output$hc2 <- renderHighchart({
+  
     x <- c("Max","Median","Min")
     y <- sprintf("{point.%s}", c("max_temp","med_temp","min_temp"))
     tltip <- tooltip_table(x, y)
     
+    median_tmp <- mainDF %>%
+      filter(str_detect(mainDF$Measurement, "Temperature"))
+    
+    med = median(median_tmp$Value, na.rm = TRUE)
+    
     hchart(Mastertemp2, type = "columnrange",
            hcaes(x = date, low = min_temp, high = max_temp,
                  color = med_temp)) %>% 
-      hc_yAxis(tickPositions = c(10, 30, 45),
+      hc_yAxis(tickPositions = c(10, med, 50),
                gridLineColor = "#B71C1C",
                labels = list(format = "{value} C", useHTML = TRUE)) %>% 
       hc_tooltip(
         useHTML = TRUE,
-        headerFormat = as.character(tags$small("{point.x: %Y-%b}")),
+        headerFormat = as.character(tags$small("{point.x: %Y %b}")),
         pointFormat = tltip
       ) %>% 
       hc_add_theme(hc_theme_db())
@@ -302,7 +311,7 @@ server <- function(input, output, session) {
         title = list(text = ""), gridLineWidth = 0.5,
         labels = list(format = "{value: %b}")) %>% 
       hc_tooltip(useHTML = TRUE, pointFormat = tltip,
-                 headerFormat = as.character(tags$small("{point.x:%d %B, %Y}")))
+                 headerFormat = as.character(tags$small("{point.x:%Y %b}")))
   })
   
   #----------------------------------------dashboard 4---------------------------------------
