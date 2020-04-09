@@ -18,7 +18,8 @@ packages = c(
   "shinythemes",
   "ggrepel",
   "forcats",
-  "shinydashboard"
+  "shinydashboard",
+  'waiter'
 )
 
 for (p in packages) {
@@ -27,6 +28,15 @@ for (p in packages) {
   }
   library(p, character.only = T)
 }
+
+################### 1.1 CSS ##########################
+css <- "
+.shiny-output-error { visibility: hidden; }
+.shiny-output-error:before {
+  visibility: visible;
+  content: 'Loading ...'; }
+}
+"
 
 ######################### 2. define dashboard UI ##########################
 
@@ -60,46 +70,60 @@ sidebar <- dashboardSidebar(
 
 ### 2.1.1 dfine dashboard body elements ###
 dashboard1 <- tabItem(tabName = "dashboard1",
-                      fillPage(titlePanel("Ridge Plot"),
-                               fluidRow(
-                                 column(4, tmapOutput("lxmap")),
-                                 column(4, tmapOutput("lxmap2"))
-                               ),
-                               br(),
-                               fluidRow(
-                                 column(4, uiOutput("sYear")),
-                                 column(4, uiOutput("sMonth"))
-                               )))
-
+                      fluidPage(
+                        tags$style(type = "text/css", css),
+                        titlePanel("Ridge Plot"),
+                        fluidRow(column(4, tmapOutput("lxmap")),
+                                 column(4, tmapOutput("lxmap2"))),
+                        br(),
+                        fluidRow(column(4, uiOutput("sYear")),
+                                 column(4, uiOutput("sMonth")))
+                      ))
 
 dashboard2 <- tabItem(tabName = "dashboard2",
-                      fluidPage(titlePanel("Ridge Plot"),
-                                fluidRow(
-                                  uiOutput("tYear1"),
-                                  fluidRow(plotOutput("tanny1"))
-                                )))
+                      fluidPage(
+                        tags$style(type = "text/css", css),
+                        titlePanel("Ridge Plot"),
+                        fluidRow(uiOutput("tYear1"),
+                                 fluidRow(plotOutput("tanny1")))
+                      ))
 
 dashboard3 <- tabItem(tabName = "dashboard3",
-                      fluidPage(titlePanel("Ridge Plot"),
-                                fluidRow(uiOutput("tYear3"),
-                                fluidRow(
-                                  column(6, plotOutput("tanny2",width="100%",height="400px")),
-                                  column(6, plotOutput("tanny3",width="100%",height="400px"))
-                                ))))
+                      fluidPage(
+                        tags$style(type = "text/css", css),
+                        titlePanel("Ridge Plot"),
+                        fluidRow(uiOutput("tYear3"),
+                                 fluidRow(
+                                   column(6, plotOutput(
+                                     "tanny2", width = "100%", height = "400px"
+                                   )),
+                                   column(6, plotOutput(
+                                     "tanny3", width = "100%", height = "400px"
+                                   ))
+                                 ))
+                      ))
 
 dashboard4 <- tabItem(tabName = "dashboard4",
                       fluidPage(
+                        tags$style(type = "text/css", css),
+                        titlePanel("Ridge Plot"),
                         fluidRow(),
                         fluidRow(uiOutput("tYear")),
                         fluidRow(plotlyOutput("tanny4")),
-
                       ))
+
 ### 2.1.2 Fill in dashboard elements ####
-body <- dashboardBody(tabItems(# First tab content
-  dashboard1,
-  dashboard2,
-  dashboard3,
-  dashboard4))
+body <- dashboardBody(
+  use_waiter(),
+  waiter_show_on_load(tagList(spin_fading_circles(),
+                              "Loading ...")),
+  tabItems(
+    dashboard1,
+    dashboard2,
+    dashboard3,
+    dashboard4
+  )
+)
 
 ui <- dashboardPage(header, sidebar, body, skin="black")
 
@@ -167,12 +191,6 @@ server <- function(input, output, session) {
     db4scatter <-
       ggplotly(
         scatterPlot 
-        # + geom_label_repel(
-        #   aes(label = Month),
-        #   box.padding   = 0.35,
-        #   point.padding = 0.5,
-        #   segment.color = 'grey50'
-        # )
       )
     
     raindensity <-
@@ -242,6 +260,12 @@ server <- function(input, output, session) {
       theme(axis.title.y = element_blank()) + xlim(min(masterDF$mean_temp, na.rm = TRUE) - 1,
                                                    max(masterDF$mean_temp, na.rm = TRUE) + 1)
   })
+  
+  
+  
+  
+  
+  
   
   output$tanny3 <- renderPlot({
     masterDF %>%
@@ -345,6 +369,7 @@ server <- function(input, output, session) {
       tm_borders(alpha = 0.5)
     tmap_leaflet(tm)
   })
+  waiter_hide()
 }
 ######################### 4. Finish app ##########################
 shinyApp(ui,server)
