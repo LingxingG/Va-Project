@@ -538,12 +538,12 @@ server <- function(input, output, session) {
                          mean_temp
                        }
                    )) +
-      geom_violin(color = "#B2BCC2",
+      geom_violin(color = "purple",
                   add = "boxplot",
-                  fill = "red",
+                  fill = "purple",
                   alpha= 0.5) +
       geom_boxplot(width = 0.1,
-                   fill = "#4863A0",
+                   fill = "grey",
                    alpha = 1) +
       theme(legend.position = "none") +
       xlab("") +
