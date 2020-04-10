@@ -187,21 +187,7 @@ dat<-ddply(dat,.(yearmonthf),transform,monthweek=1+week-min(week))
 server <- function(input, output) {
   #----------------------------------------dashboard 6---------------------------------------
   output$my2 <- renderImage({
-    temperature_my<- mainDF %>% filter(Measurement == "Mean Temperature (Â°C)") %>% filter(!is.na(Value))
-    temperature_my$date <- as.Date(with(temperature_my, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
-    smooth_vals = predict(loess(Value~Year,temperature_my))
-    temperature_my$smooth_vals <- smooth_vals
-    outfile <- tempfile(fileext='.gif')
-    
-    anim <- ggplot(temperature_my,aes(date,Value))+
-      geom_line(color="red") +
-      geom_line(aes(y = smooth_vals), colour = "blue")+
-      transition_reveal(Year) + 
-      #shadow_mark() + 
-      ease_aes("linear")
-    
-    anim_save("outfile.gif", animate(anim))
-    list(src = "outfile.gif",
+    list(src = "temperature_trend.gif",
          contentType = 'image/gif'
          # width = 400,
          # height = 300,
@@ -229,13 +215,21 @@ server <- function(input, output) {
     selectInput(
       inputId = "my_measure",
       label = "Select to view",
-      choices = c('Daily Rainfall Total (mm)',"Mean Temperature (Â°C)")
+      choices = c('Daily Rainfall Total (mm)',"Mean Temperature (°C)")
     )
   })
   output$my1 <- renderPlot({
-    dat %>% filter(Measurement == input$my_measure) %>% filter(Year <= input$calendaryear[2])%>% filter(Year >= input$calendaryear[1]) %>% ggplot(aes(monthweek, weekdayf, fill = Value)) + 
-      geom_tile(colour = "white") + facet_grid(year~monthf) + scale_fill_gradient(low="yellow", high="red") +
-      labs(title = "Time-Series Calendar Heatmap") +  xlab("Week of Month") + ylab("")
+    if(input$my_measure == "Daily Rainfall Total (mm)"){
+      dat %>% filter(Measurement == input$my_measure) %>% filter(Year <= input$calendaryear[2])%>% filter(Year >= input$calendaryear[1]) %>% ggplot(aes(monthweek, weekdayf, fill = Value)) + 
+        geom_tile(colour = "white") + facet_grid(year~monthf) + scale_fill_gradient(low="yellow", high="red") +
+        labs(title = "Heatmap Across the Years",fill=input$my_measure) +  xlab("Week of Month") + ylab("")
+    }
+    else {
+      dat %>% filter(Measurement == "Mean Temperature (Â°C)") %>% filter(Year <= input$calendaryear[2])%>% filter(Year >= input$calendaryear[1]) %>% ggplot(aes(monthweek, weekdayf, fill = Value)) + 
+        geom_tile(colour = "white") + facet_grid(year~monthf) + scale_fill_gradient(low="yellow", high="red") +
+        labs(title = "Heatmap Across the Years",fill=input$my_measure) +  xlab("Week of Month") + ylab("")
+      
+    }
     
   })
   

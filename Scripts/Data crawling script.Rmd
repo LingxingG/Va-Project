@@ -21,7 +21,14 @@ packages <-
   'lubridate',
   'dplyr',
   'zoo',
-  'hrbrmisc')
+  'gganimate',
+  'transformr',
+  'gifski',
+  'png',
+  'quantmod',
+  'reshape2',
+  'plyr',
+  'scales')
 
 for (p in packages) {
   if (!require(p, character.only = T)) {
@@ -221,6 +228,27 @@ masterDF <- masterDF %>%
 #   select(-median)
 # 
 # df <- left_join(Mastertemp2, dfcolyrs, by = "Year")
+```
+
+```{r}
+test2 <- mainDF %>% filter(Measurement == "Mean Temperature (Â°C)") %>% filter(!is.na(Value))
+smooth_vals = predict(loess(Value~Year,test2))
+test2$date <- as.Date(test2$date)
+test2$smooth_vals <- smooth_vals
+#https://stackoverflow.com/questions/60856938/animate-points-and-regression-line-along-date-with-gganimate
+anim <- ggplot(test2,aes(date,Value))+
+  geom_line(color="red") +
+  geom_line(aes(y = smooth_vals), colour = "blue")+
+  labs(
+    title = "Temperature accross Singapore",
+    x="Year",
+    y="Temperature (\u00B0C)"
+    )+
+  transition_reveal(date) + 
+  #shadow_mark() + 
+  ease_aes("linear")
+
+anim_save("temperature_trend.gif",animate(anim,renderer = gifski_renderer()))
 ```
 
 
