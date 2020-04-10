@@ -1,40 +1,68 @@
 ####################### 1. define Package to install #######################
-packages = c(
-  'dplyr',
-  'tidyr',
-  'tidyverse',
-  'sf',
-  'tmap',
-  "lubridate",
-  'plotly',
-  'shiny',
-  "readr",
-  'stringr',
-  'tmaptools',
-  'ggstatsplot',
-  'ggplot2',
-  'gganimate',
-  'ggridges',
-  "gridExtra",
-  "htmlwidgets",
-  'leaflet',
-  "shinythemes",
-  "forcats",
-  "shinydashboard",
-  'waiter',
-  'highcharter',
-  'shinycssloaders',
-  "purrr",
-  "viridis",
-  'rlist'
-)
+library(rsconnect)
+library(shiny)
+library(shinydashboard)
+library(dplyr)
+library(tidyverse)
+library(sf)
+library(tmap)
+library(plotly)
+library(shiny)
+library(stringr)
+library(tmaptools)
+library(ggstatsplot)
+library(ggplot2)
+library(gganimate)
+library(ggridges)
+library(gridExtra)
+library(htmlwidgets)
+library(leaflet)
+library(shinythemes)
+library(ggrepel)
+library(forcats)
+library(shinydashboard)
+library(waiter)
+library(highcharter)
+library(shinycssloaders)
+library(rlist)
+library(purrr)
 
-for (p in packages) {
-  if (!require(p, character.only = T)) {
-    install.packages(p)
-  }
-  library(p, character.only = T)
-}
+# packages = c(
+#   'dplyr',
+#   'tidyr',
+#   'tidyverse',
+#   'sf',
+#   'tmap',
+#   "lubridate",
+#   'plotly',
+#   'shiny',
+#   "readr",
+#   'stringr',
+#   'tmaptools',
+#   'ggstatsplot',
+#   'ggplot2',
+#   'gganimate',
+#   'ggridges',
+#   "gridExtra",
+#   "htmlwidgets",
+#   'leaflet',
+#   "shinythemes",
+#   "forcats",
+#   "shinydashboard",
+#   'waiter',
+#   'highcharter',
+#   'shinycssloaders',
+#   "purrr",
+#   "viridis",
+#   'rlist'
+# )
+# 
+# for (p in packages) {
+#   if (!require(p, character.only = T)) {
+#     install.packages(p)
+#   }
+#   library(p, character.only = T)
+# }
 
 ################### 1.1 CSS ##########################
 css <- "
