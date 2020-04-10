@@ -196,16 +196,15 @@ mpsz <- st_read(dsn = "geospatial",
 mainDF <- read.csv("merged data\\dataset.csv")
 mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
 
-
 #-------------- Non Maps ------------
 rainfall <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-  group_by(Region,Year,Month) %>%
+  group_by(Region,SZ,Year,Month) %>%
   summarise(mean_rain = mean(Value, na.rm = TRUE))
 
 temperature <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-  group_by(Region,Year,Month) %>%
+  group_by(Region,SZ,Year,Month) %>%
   summarise(mean_temp = mean(Value, na.rm = TRUE))
 
 masterDF <- rainfall %>%
@@ -216,16 +215,18 @@ masterDF <- rainfall %>%
                              "Oct","Nov","Dec"))
 masterDF$mean_temp = temperature$mean_temp
 masterDF <- masterDF %>%
-  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
-#-------------- maps-----------
+  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) %>%
+  na.omit()
+
+#-------------- maps----------------
 rainfall <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-  group_by(Region,Year,SZ, Month) %>%
+  group_by(Year,SZ, Month) %>%
   summarise(mean_rain = mean(Value, na.rm = TRUE))
 
 temperature <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-  group_by(Region,Year,SZ, Month) %>%
+  group_by(Year,SZ, Month) %>%
   summarise(mean_temp = mean(Value, na.rm = TRUE))
 
 masterDF2 <- rainfall %>%
@@ -278,7 +279,6 @@ Mastertemp2 <- Mastertemp2 %>%
 ######################### 3. define input output ##########################
 server <- function(input, output, session) {
   #----------------------------------------dashboard 6---------------------------------------
-  
   output$hc2 <- renderHighchart({
     x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
     y <-
@@ -377,7 +377,7 @@ server <- function(input, output, session) {
              aes(
                x = mean_rain,
                y = mean_temp,
-               color = as.factor(Month),
+               color = as.factor(Region),
                text = paste(
                  "Mean Rain Precipitation: ",
                  mean_rain,
@@ -386,10 +386,14 @@ server <- function(input, output, session) {
                  mean_temp,
                  "(\u00B0C)" ,
                  "<br>Month: ",
-                 Month
+                 Month,
+                 "<br>Region: ",
+                 Region
                )
              )) +
-      geom_point(alpha = 0.4) +
+      geom_point(alpha = 0.8) +
+      stat_smooth(method = "lm", col = "black", size = 0.7,
+                  fill = "gray60", alpha = 0.2) +
       theme(legend.position = "none",
             legend.title = element_blank()) +
       labs(y = "Temperature (\u00B0C)", x = "Rain Precipitation (mm)")
@@ -496,23 +500,22 @@ server <- function(input, output, session) {
     )
   })
   output$tanny1 <- renderPlotly({
-  
     rain <- ggplot(masterDF %>%
-                   filter(Year == as.numeric(input$YearTanny1)),
+                     filter(Year == as.numeric(input$YearTanny1)),
                    aes(factor(Month),
                        if (input$db2type == "Rainfall") {
                          mean_rain
                        } else{
                          mean_temp
                        }
-                       # ,text = tmp)
                    )) +
       geom_violin(color = "#B2BCC2",
                   add = "boxplot",
-                  fill = NA) +
+                  fill = "red",
+                  alpha= 0.5) +
       geom_boxplot(width = 0.1,
                    fill = "#4863A0",
-                   alpha = 0.2) +
+                   alpha = 1) +
       theme(legend.position = "none") +
       xlab("") +
       ylab(if (input$db2type == "Rainfall") {
