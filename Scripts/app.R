@@ -1,7 +1,6 @@
 ####################### 1. define Package to install #######################
 library(rsconnect)
 library(shiny)
-library(shinydashboard)
 library(dplyr)
 library(tidyverse)
 library(sf)
@@ -9,23 +8,15 @@ library(tmap)
 library(plotly)
 library(shiny)
 library(stringr)
-library(tmaptools)
-library(ggstatsplot)
 library(ggplot2)
-library(gganimate)
 library(ggridges)
-library(gridExtra)
 library(htmlwidgets)
 library(leaflet)
-library(shinythemes)
-library(ggrepel)
 library(forcats)
 library(shinydashboard)
 library(waiter)
 library(highcharter)
 library(shinycssloaders)
-library(rlist)
-library(purrr)
 
 # packages = c(
 #   'dplyr',
@@ -33,28 +24,19 @@ library(purrr)
 #   'tidyverse',
 #   'sf',
 #   'tmap',
-#   "lubridate",
 #   'plotly',
 #   'shiny',
-#   "readr",
 #   'stringr',
 #   'tmaptools',
-#   'ggstatsplot',
 #   'ggplot2',
-#   'gganimate',
 #   'ggridges',
-#   "gridExtra",
 #   "htmlwidgets",
 #   'leaflet',
-#   "shinythemes",
 #   "forcats",
 #   "shinydashboard",
 #   'waiter',
 #   'highcharter',
-#   'shinycssloaders',
-#   "purrr",
-#   "viridis",
-#   'rlist'
+#   'shinycssloaders'
 # )
 # 
 # for (p in packages) {
@@ -80,7 +62,7 @@ header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem(
-      "Dashboard 1",
+      "Climate Choropleth Map",
       tabName = "dashboard1",
       icon = icon("dashboard")
     ),
@@ -90,7 +72,7 @@ sidebar <- dashboardSidebar(
       icon = icon("dashboard")
     ),
     menuItem(
-      "Dashboard 3",
+      "Ridge Plot",
       tabName = "dashboard3",
       icon = icon("dashboard")
     ),
