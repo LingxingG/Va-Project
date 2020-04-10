@@ -1,3 +1,8 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
 The purpose of this file is to: \
 1. crawl the data from web \
 2. combine all csv into one single DF
@@ -11,10 +16,12 @@ packages <-
   c('tidyverse',
   'data.table',
   'sf',
+  'tidyr',
   'stringr',
   'lubridate',
   'dplyr',
-  'zoo')
+  'zoo',
+  'hrbrmisc')
 
 for (p in packages) {
   if (!require(p, character.only = T)) {
@@ -23,56 +30,64 @@ for (p in packages) {
     library(p, character.only = T)
 }
 
+
 ```
 
 
 ```{r echo=TRUE, warning=FALSE}
-months = list('01',
-              '02',
-              '03',
-              '04',
-              '05',
-              '06',
-              '07',
-              '08',
-              '09',
-              '10',
-              '11',
-              '12')
-areacode = read_csv("merged data\\AreaID.csv")
-years <- list(1980:2019)
-
-for (x in 1:nrow(areacode)){
-  area = areacode[x,1]
-  for (i in 1:length(years[[1]]-1)){
-    year = years[[1]][i]
-    for( month in months){
-      downloadurl = paste(
-          "http://www.weather.gov.sg/files/dailydata/DAILYDATA_",
-          area,
-          "_",
-          sprintf("%s", year),
-          month,
-          ".csv",
-          sep = ""
-        )
-      temp = paste(".\\raw data\\",
-                   area,
-                   "_",
-                   sprintf("%s", year),
-                   "_",
-                   month,
-                   ".csv",
-                   sep = "")
-      
-      if (!file.exists(file.path(temp))){
-          skip_to_next <- FALSE
-          tryCatch(download.file(downloadurl,temp), error = function(e) { skip_to_next <<- TRUE})
-          if(skip_to_next) { next }
-      } 
-    }
-  }
-}
+# months = list('01',
+#               '02',
+#               '03',
+#               '04',
+#               '05',
+#               '06',
+#               '07',
+#               '08',
+#               '09',
+#               '10',
+#               '11',
+#               '12')
+# areacode = read_csv("merged data\\AreaID.csv")
+# years <- list(1980:2019)
+# 
+# for (x in 1:nrow(areacode)) {
+#   area = areacode[x, 1]
+#   for (i in 1:length(years[[1]] - 1)) {
+#     year = years[[1]][i]
+#     for (month in months) {
+#       downloadurl = paste(
+#         "http://www.weather.gov.sg/files/dailydata/DAILYDATA_",
+#         area,
+#         "_",
+#         sprintf("%s", year),
+#         month,
+#         ".csv",
+#         sep = ""
+#       )
+#       temp = paste(".\\raw data\\",
+#                    area,
+#                    "_",
+#                    sprintf("%s", year),
+#                    "_",
+#                    month,
+#                    ".csv",
+#                    sep = "")
+#       
+#       if (!file.exists(file.path(temp))) {
+#         skip_to_next <- FALSE
+#         tryCatch(
+#           download.file(downloadurl, temp),
+#           error = function(e) {
+#             skip_to_next <<- TRUE
+#           }
+#         )
+#         if (skip_to_next) {
+#           next
+#         }
+#       }
+#     }
+#   }
+# }
 
 ```
 
@@ -131,44 +146,83 @@ mpsz <- st_read(dsn = "geospatial",
 mainDF <- read.csv("merged data\\dataset.csv")
 mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%B-%d")
 ```
+
 ```{r}
-# Mastertemp <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-#   select(Region,Year, date, Value) %>%
-#   group_by(Year,Region,date) %>%
-#   summarise(mean_temperaturec  = mean(Value, na.rm = TRUE))
-# 
-# temperature_max <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Maximum Temperature")) %>%
-#   select(Region,Year, date, Value) %>%
-#   group_by(Year,Region,date) %>%
-#   summarise(max_temperaturec = mean(Value, na.rm = TRUE))
-# 
-# temperature_min <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Minimum Temperature")) %>%
-#   select(Region, Year, date, Value) %>%
-#   group_by(Year, Region, date) %>%
-#   summarise(min_temperaturec = mean(Value, na.rm = TRUE))
-# 
-# 
-# Mastertemp$max_temperaturec = temperature_max$max_temperaturec
-# Mastertemp$min_temperaturec = temperature_min$min_temperaturec
-# 
-# Mastertemp <- Mastertemp %>%
-#   na.omit()
+Mastertemp2 <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+  select(Region,Year, date, Value) %>%
+  group_by(Year,Region,date) %>%
+  summarise(min_temperaturec = min(Value, na.rm = TRUE),
+            max_temperaturec = max(Value, na.rm = TRUE),
+            mean_temperaturec = mean(Value, na.rm = TRUE),
+            median_temperaturec = median(Value, na.rm = TRUE)) %>%
+  na.omit()
 
-
-Mastertemp2 <- mainDF
-Mastertemp2$Month = match(Mastertemp2$Month, month.abb)
-Mastertemp2$date = as.Date(with(Mastertemp2, paste(Day,Month, Year, sep="-")), "%d-%m-%Y")
+smooth_vals <- predict(loess(median_temperaturec ~Year,Mastertemp2))
+Mastertemp2$smooth_vals <- smooth_vals
 
 Mastertemp2 <- Mastertemp2 %>%
+              mutate_at(4:8, funs(round(., 1)))
+
+Mastertemp <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
-  # transform(date = as.yearmon(date, frac = 1)) %>%
   group_by(Year, Month) %>%
-  summarise(med_temp = median(Value, na.rm = TRUE),
-            min_temp = min(Value, na.rm = TRUE),
-            max_temp = max(Value, na.rm = TRUE)) %>%
-   na.omit()
+  summarise(median = median(Value, na.rm = TRUE),
+            lower = min(Value, na.rm = TRUE),
+            upper = max(Value, na.rm = TRUE),
+            avg = mean(Value, na.rm =TRUE)) %>%
+  na.omit()
+Mastertemp$date = as.Date(with(Mastertemp, paste(Year,month.abb[Month], "01", sep=" ")), "%Y %b %d")
+smooth_vals <- predict(loess(median~Year,Mastertemp))
+Mastertemp$smooth_vals <- smooth_vals
+
+Mastertemp <- Mastertemp %>%
+  mutate_at(c(3:6,8), funs(round(., 1))) 
+
 ```
+
+```{r}
+rainfall <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Year,Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
+temperature <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  group_by(Year,Month) %>%
+  summarise(mean_temp = mean(Value, na.rm = TRUE))
+
+masterDF <- rainfall %>%
+  mutate(Month = fct_relevel(Month, 
+                             "Jan","Feb","Mar",
+                             "Apr","May","Jun",
+                             "Jul","Aug","Sep",
+                             "Oct","Nov","Dec"))
+masterDF$mean_temp = temperature$mean_temp
+masterDF <- masterDF %>%
+  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) %>%
+  na.omit()
+```
+
+
+```{r}
+# Mastertemp2 <- Mastertemp2 %>%
+#   mutate(
+#     color_m = colorize(median, viridis(10, option = "B")),
+#     color_m = hex_to_rgba(color_m, 0.65)
+#   )
+# 
+# dfcolyrs <- Mastertemp2 %>%
+#   group_by(Year) %>%
+#   summarise(median = median(median)) %>%
+#   ungroup() %>%
+#   mutate(color_y = colorize(median, viridis(10, option = "B")),
+#          color_y = hex_to_rgba(color_y, 0.65)) %>%
+#   select(-median)
+# 
+# df <- left_join(Mastertemp2, dfcolyrs, by = "Year")
+```
+
+
+
 
