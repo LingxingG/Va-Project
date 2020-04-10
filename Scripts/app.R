@@ -90,7 +90,7 @@ sidebar <- dashboardSidebar(
       icon = icon("dashboard")
     ),
     menuItem(
-      "Density Plot",
+      "Correlation Plot",
       tabName = "dashboard4",
       icon = icon("dashboard")
     ),
@@ -182,7 +182,7 @@ dashboard3 <- tabItem(tabName = "dashboard3",
 dashboard4 <- tabItem(tabName = "dashboard4",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Density Plot"),
+                        titlePanel("Correlation Plot"),
                         fluidRow(),
                         fluidRow(uiOutput("tYear")),
                         fluidRow(plotlyOutput("tanny4")),
@@ -389,12 +389,12 @@ dat$smooth_vals <- smooth_vals
 
 ######################### 3. define input output ##########################
 server <- function(input, output, session) {
-  #----------------------------------------dashboard 8-------------------------------
+  #----------------------------------------dashboard 8 Animation -------------------------------
   output$my2 <- renderImage({
     list(src = "temperature_trend.gif",
          contentType = 'image/gif'
     )}, deleteFile = FALSE)
-  #----------------------------------------dashboard 7-------------------------------
+  #----------------------------------------dashboard 7 Calendar Heatmap -------------------------------
   output$my_calendar <- renderUI({
 
     sliderInput(
@@ -441,7 +441,7 @@ server <- function(input, output, session) {
         xlab("Week of Month") + ylab("")
     }
   })
-  #----------------------------------------dashboard 6---------------------------------------
+  #----------------------------------------dashboard 6 Climate Trend ---------------------------------------
   output$hc2 <- renderHighchart({
     x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
     y <-
@@ -481,7 +481,7 @@ server <- function(input, output, session) {
       )
   })
   
-  #----------------------------------------dashboard 5---------------------------------------
+  #----------------------------------------dashboard 5 Climate Radials ---------------------------------------
   output$hcRegion <- renderUI({
     tmp <- Mastertemp2 %>%
       filter(Year == as.numeric(input$hc_Year))
@@ -516,7 +516,7 @@ server <- function(input, output, session) {
                  headerFormat = as.character(tags$small("{point.x:%d %B, %Y}")))
   })
   
-  #----------------------------------------dashboard 4---------------------------------------
+  #----------------------------------------dashboard 4 Correlation Plot---------------------------------------
   output$tYear <- renderUI({
     sliderInput(
       inputId = "YearTanny4",
@@ -601,7 +601,7 @@ server <- function(input, output, session) {
         shareY = TRUE
       )
   })
-  #----------------------------------------dashboard 3---------------------------------------
+  #----------------------------------------dashboard 3 Ridge Plot---------------------------------------
   output$tYear3 <- renderUI({
     sliderInput(
       inputId = "YearTanny3",
@@ -649,7 +649,7 @@ server <- function(input, output, session) {
       theme(axis.title.y = element_blank())
   })
   
-  #----------------------------------------dashboard 2---------------------------------------
+  #----------------------------------------dashboard 2 Voilin Plot  ---------------------------------------
   output$tYear1 <- renderUI({
     sliderInput(
       inputId = "YearTanny1",
@@ -690,7 +690,7 @@ server <- function(input, output, session) {
     
     rain <- ggplotly(rain, tooltip = "text")
   })
-  #----------------------------------------dashboard 1----------------------------------------
+  #----------------------------------------dashboard 1 Choropleth Map ----------------------------------------
   # render filters in UI 
   output$sYear <- renderUI({
     sliderInput(
