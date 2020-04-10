@@ -358,6 +358,7 @@ server <- function(input, output, session) {
     )
   })
   
+  
   output$hc <- renderHighchart({
     x <- c("Min", "Mean", "Max")
     y <- sprintf("{point.%s}", c("min_temperaturec", "mean_temperaturec", "max_temperaturec"))
