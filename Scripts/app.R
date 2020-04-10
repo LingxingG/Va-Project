@@ -26,10 +26,9 @@ packages = c(
   'shinycssloaders',
   "purrr",
   "viridis",
-  'rlist',
-  'hrbrmisc'
+  'rlist'
 )
-devtools::install_github("hrbrmstr/hrbrmisc")
+
 for (p in packages) {
   if (!require(p, character.only = T)) {
     install.packages(p)
@@ -197,14 +196,16 @@ mpsz <- st_read(dsn = "geospatial",
 mainDF <- read.csv("merged data\\dataset.csv")
 mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
 
+
+#-------------- Non Maps ------------
 rainfall <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-  group_by(Region, SZ, Station,Year, Month) %>%
+  group_by(Region,Year,Month) %>%
   summarise(mean_rain = mean(Value, na.rm = TRUE))
 
 temperature <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-  group_by(Region, SZ, Station, Year, Month) %>%
+  group_by(Region,Year,Month) %>%
   summarise(mean_temp = mean(Value, na.rm = TRUE))
 
 masterDF <- rainfall %>%
@@ -214,6 +215,28 @@ masterDF <- rainfall %>%
                              "Jul","Aug","Sep",
                              "Oct","Nov","Dec"))
 masterDF$mean_temp = temperature$mean_temp
+masterDF <- masterDF %>%
+  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
+#-------------- maps-----------
+rainfall <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Region,Year,SZ, Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
+temperature <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  group_by(Region,Year,SZ, Month) %>%
+  summarise(mean_temp = mean(Value, na.rm = TRUE))
+
+masterDF2 <- rainfall %>%
+  mutate(Month = fct_relevel(Month, 
+                             "Jan","Feb","Mar",
+                             "Apr","May","Jun",
+                             "Jul","Aug","Sep",
+                             "Oct","Nov","Dec"))
+masterDF2$mean_temp = temperature$mean_temp
+masterDF2<- masterDF2 %>%
+  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
 
 #--------------Weathers trends------------
 Mastertemp <- mainDF %>%
@@ -295,7 +318,6 @@ server <- function(input, output, session) {
       )
   })
   
-  
   #----------------------------------------dashboard 5---------------------------------------
   output$hcRegion <- renderUI({
     tmp <- Mastertemp2 %>%
@@ -332,14 +354,12 @@ server <- function(input, output, session) {
   
   #----------------------------------------dashboard 4---------------------------------------
   output$tYear <- renderUI({
-    Year_min <- min(rainfall[, "Year"], na.rm = TRUE)
-    Year_max <- max(rainfall[, "Year"], na.rm = TRUE)
     sliderInput(
       inputId = "YearTanny4",
       label = "Year:",
-      min = 2009,
+      min = Year_min,
       max = Year_max,
-      value = c(2009),
+      value = Year_min,
       step = 1,
       sep = "",
       animate = animationOptions(interval = 5000,
@@ -355,15 +375,15 @@ server <- function(input, output, session) {
     scatterPlot <-
       ggplot(tanny4(),
              aes(
-               x = round(mean_rain, 2),
-               y = round(mean_temp, 2),
+               x = mean_rain,
+               y = mean_temp,
                color = as.factor(Month),
                text = paste(
                  "Mean Rain Precipitation: ",
-                 round(mean_rain, 2),
+                 mean_rain,
                  "mm",
                  "<br>Mean Temperature: ",
-                 round(mean_temp, 2),
+                 mean_temp,
                  "(\u00B0C)" ,
                  "<br>Month: ",
                  Month
@@ -377,7 +397,7 @@ server <- function(input, output, session) {
     db4scatter <- ggplotly(scatterPlot, tooltip = "text")
     
     raindensity <-
-      ggplot(tanny4(), aes(round(mean_rain,2))) +
+      ggplot(tanny4(), aes(mean_rain)) +
       geom_histogram(aes(y = ..density..), colour = "black", fill = "white") +
       geom_density(alpha = .5, fill = '#C7E4EA') +
       theme(legend.position = "none")
@@ -385,7 +405,7 @@ server <- function(input, output, session) {
     db4rain <- ggplotly(raindensity)
     
     tempdensity <-
-      ggplot(tanny4(), aes(round(mean_temp,2))) +
+      ggplot(tanny4(), aes(mean_temp)) +
       geom_histogram(aes(y = ..density..,),
                      colour = "black",
                      fill = "white") +
@@ -415,7 +435,6 @@ server <- function(input, output, session) {
   })
   #----------------------------------------dashboard 3---------------------------------------
   output$tYear3 <- renderUI({
-    Year_max <- max(temperature[, "Year"], na.rm = TRUE)
     sliderInput(
       inputId = "YearTanny3",
       label = "Year:",
@@ -464,7 +483,6 @@ server <- function(input, output, session) {
   
   #----------------------------------------dashboard 2---------------------------------------
   output$tYear1 <- renderUI({
-    Year_max <- max(temperature[, "Year"], na.rm = TRUE)
     sliderInput(
       inputId = "YearTanny1",
       label = "Year:",
@@ -478,10 +496,17 @@ server <- function(input, output, session) {
     )
   })
   output$tanny1 <- renderPlotly({
+  
     rain <- ggplot(masterDF %>%
-                     na.omit() %>%
-                     filter(Year == as.numeric(input$YearTanny1)),
-                   aes(factor(Month), if(input$db2type == "Rainfall"){mean_rain}else{mean_temp})) +
+                   filter(Year == as.numeric(input$YearTanny1)),
+                   aes(factor(Month),
+                       if (input$db2type == "Rainfall") {
+                         mean_rain
+                       } else{
+                         mean_temp
+                       }
+                       # ,text = tmp)
+                   )) +
       geom_violin(color = "#B2BCC2",
                   add = "boxplot",
                   fill = NA) +
@@ -490,21 +515,23 @@ server <- function(input, output, session) {
                    alpha = 0.2) +
       theme(legend.position = "none") +
       xlab("") +
-      ylab(if(input$db2type == "Rainfall"){"Average Rainfall ( mm )"}else{"Average temperature (\u00B0C)"})
+      ylab(if (input$db2type == "Rainfall") {
+        "Average Rainfall ( mm )"
+      } else{
+        "Average temperature (\u00B0C)"
+      })
     
-    rain <- ggplotly(rain)
+    rain <- ggplotly(rain, tooltip = "text")
   })
   #----------------------------------------dashboard 1----------------------------------------
   # render filters in UI 
   output$sYear <- renderUI({
-    Year_min <- min(rainfall[, "Year"], na.rm = TRUE)
-    Year_max <- max(rainfall[, "Year"], na.rm = TRUE)
     sliderInput(
       inputId = "YearLX",
       label = "Year:",
-      min = 2009,
+      min = Year_min,
       max = Year_max,
-      value = c(2009),
+      value = Year_min,
       step = 1,
       sep = "",
       animate = animationOptions(interval = 5000,
@@ -525,7 +552,7 @@ server <- function(input, output, session) {
   })
   
   tmp<-reactive({
-    tmp2 <- masterDF %>%
+    tmp2 <- masterDF2 %>%
       filter(Year == as.numeric(input$YearLX)) %>%
       filter(Month == as.character(input$MonthLX))
     
