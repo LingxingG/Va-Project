@@ -17,7 +17,12 @@ library(shinydashboard)
 library(waiter)
 library(highcharter)
 library(shinycssloaders)
-
+library(transformr)
+library(gifski)
+library(png)
+library(quantmod)
+library(reshape2)
+library(scales)
 # packages = c(
 #   'dplyr',
 #   'tidyr',
@@ -36,7 +41,13 @@ library(shinycssloaders)
 #   "shinydashboard",
 #   'waiter',
 #   'highcharter',
-#   'shinycssloaders'
+#   'shinycssloaders',
+# 'transformr',
+# 'gifski',
+# 'png',
+# 'quantmod',
+# 'reshape2',
+# 'scales'
 # )
 # 
 # for (p in packages) {
@@ -62,8 +73,23 @@ header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem(
+      "Home Page",
+      tabName = 'homepage',
+      icon = icon("home")
+      ),
+    menuItem(
       "Climate Choropleth Map",
       tabName = "dashboard1",
+      icon = icon("map")
+    ),
+    menuItem(
+      "Weathers Radials",
+      tabName = "dashboard5",
+      icon = icon("dashboard")
+    ),
+    menuItem(
+      "Density Plot",
+      tabName = "dashboard4",
       icon = icon("dashboard")
     ),
     menuItem(
@@ -77,24 +103,35 @@ sidebar <- dashboardSidebar(
       icon = icon("dashboard")
     ),
     menuItem(
-      "Density Plot",
-      tabName = "dashboard4",
-      icon = icon("dashboard")
-    ),
-    menuItem(
-      "Weathers Radials",
-      tabName = "dashboard5",
-      icon = icon("dashboard")
-    ),
-    menuItem(
       "Weathers Trends",
       tabName = "dashboard6",
+      icon = icon("dashboard"),
+      menuItem(
+        "Climate Trend Animation",
+        tabName = "dashboard8",
+        icon = icon("dashboard")
+      )
+    ),
+    menuItem(
+      "Calendar Heatmap",
+      tabName = "dashboard7",
       icon = icon("dashboard")
     )
   )
 )
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.1 define dashboard body elements ~~~~~~~~~~~~~~~~~~~~~~~~~ 
+homepage <- tabItem(tabName = "homepage",
+                    fluidPage(fluidRow(
+                      HTML('<center><img src="Rain_Shine.png" width="400"></center>')
+                      
+                    )),
+                    fluidRow(
+                        column(12, h1("Problem and Motivation")),
+                        column(12, h4("Although the weather in Singapore does not seem to be an essential part of everyone's lifestyle, the weather can play an important role in affecting one's health.")),
+                        column(12, h4(
+                          "Our team aims to present Singapore's weather data in more user-friendly and meaningful interpretation ways. Through our user-friendly dashboards visualization, we hope to provide users in-depth insights, to identify the trends and patterns inherent within the weather data available, and answer questions regarding the changes in Singapore's weather from available historical data.")
+                    )))
 dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
@@ -183,18 +220,32 @@ dashboard6 <- tabItem(tabName = "dashboard6",
                         ))
                       ))
 
+dashboard7 <- tabItem(tabName = "dashboard7",
+                      fluidPage(
+                        tags$style(type = "text/css", css),
+                        fluidRow(column(4, uiOutput("my_measure")),
+                                 column(4, uiOutput("my_calendar"))),
+                        fluidRow(plotOutput("my1"))
+                      ))
+
+dashboard8 <- tabItem(tabName = "dashboard8",
+                      fluidPage(tags$style(type = "text/css", css),
+                                fluidRow(plotOutput("my2"))))
 #~~~~~~~~~~~~~~~~~~~~~~~~~ 2.1.2 Fill in dashboard elements ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 body <- dashboardBody(
   use_waiter(),
   waiter_show_on_load(tagList(spin_fading_circles(),
                               "Loading ...")),
   tabItems(
+    homepage,
     dashboard1,
     dashboard2,
     dashboard3,
     dashboard4,
     dashboard5,
-    dashboard6
+    dashboard6,
+    dashboard7,
+    dashboard8
   )
 )
 
@@ -286,8 +337,70 @@ Mastertemp2$smooth_vals <- smooth_vals
 Mastertemp2 <- Mastertemp2 %>%
   mutate_at(4:8, funs(round(., 1)))
 
+#-------------- Calendar Heatmap ----------------
+dat <- mainDF %>%
+  select(Year, Month, Day, Measurement, Value) %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  filter(!is.na(Value))
+
+dat$date <- as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
+
+
 ######################### 3. define input output ##########################
 server <- function(input, output, session) {
+  
+  #----------------------------------------dashboard 8-------------------------------
+  output$my2 <- renderImage({
+    list(src = "temperature_trend.gif",
+         contentType = 'image/gif'
+    )})
+  #----------------------------------------dashboard 7-------------------------------
+  output$my_calendar <- renderUI({
+
+    sliderInput(
+      inputId = "calendaryear",
+      label = "Select time period: ",
+      min = Year_min,
+      max = Year_max,
+      value = c(Year_min, Year_min + 3),
+      step = 1,
+      sep = "",
+      animate = animationOptions(interval = 5000,
+                                 loop = FALSE)
+    )
+  })
+  
+  output$my_measure <- renderUI({
+    selectInput(
+      inputId = "my_measure",
+      label = "Select to view",
+      choices = c('Daily Rainfall Total (mm)', "Mean Temperature (°C)")
+    )
+  })
+  output$my1 <- renderPlot({
+    if (input$my_measure == "Daily Rainfall Total (mm)") {
+      dat %>% filter(Measurement == input$my_measure) %>% 
+        filter(Year <= input$calendaryear[2]) %>% 
+        filter(Year >= input$calendaryear[1]) %>% 
+        ggplot(aes(monthweek, weekdayf, fill = Value)) +
+        geom_tile(colour = "white") + 
+        facet_grid(year ~ monthf) + 
+        scale_fill_gradient(low = "yellow", high = "red") +
+        labs(title = "Heatmap Across the Years", fill = input$my_measure) + 
+        xlab("Week of Month") + ylab("")
+    }
+    else {
+      dat %>% filter(Measurement == "Mean Temperature (Â°C)") %>% 
+        filter(Year <= input$calendaryear[2]) %>% 
+        filter(Year >= input$calendaryear[1]) %>% 
+        ggplot(aes(monthweek, weekdayf, fill = Value)) +
+        geom_tile(colour = "white") + 
+        facet_grid(year ~ monthf) + 
+        scale_fill_gradient(low = "yellow", high = "red") +
+        labs(title = "Heatmap Across the Years", fill = input$my_measure) + 
+        xlab("Week of Month") + ylab("")
+    }
+  })
   #----------------------------------------dashboard 6---------------------------------------
   output$hc2 <- renderHighchart({
     x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
