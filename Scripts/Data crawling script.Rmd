@@ -211,27 +211,11 @@ masterDF <- masterDF %>%
   na.omit()
 ```
 
-
 ```{r}
-# Mastertemp2 <- Mastertemp2 %>%
-#   mutate(
-#     color_m = colorize(median, viridis(10, option = "B")),
-#     color_m = hex_to_rgba(color_m, 0.65)
-#   )
-# 
-# dfcolyrs <- Mastertemp2 %>%
-#   group_by(Year) %>%
-#   summarise(median = median(median)) %>%
-#   ungroup() %>%
-#   mutate(color_y = colorize(median, viridis(10, option = "B")),
-#          color_y = hex_to_rgba(color_y, 0.65)) %>%
-#   select(-median)
-# 
-# df <- left_join(Mastertemp2, dfcolyrs, by = "Year")
-```
+test2 <- mainDF %>% 
+  filter(Measurement == "Mean Temperature (Â°C)") %>% 
+  filter(!is.na(Value))
 
-```{r}
-test2 <- mainDF %>% filter(Measurement == "Mean Temperature (Â°C)") %>% filter(!is.na(Value))
 smooth_vals = predict(loess(Value~Year,test2))
 test2$date <- as.Date(test2$date)
 test2$smooth_vals <- smooth_vals
@@ -245,10 +229,58 @@ anim <- ggplot(test2,aes(date,Value))+
     y="Temperature (\u00B0C)"
     )+
   transition_reveal(date) + 
-  #shadow_mark() + 
   ease_aes("linear")
 
 anim_save("temperature_trend.gif",animate(anim,renderer = gifski_renderer()))
+```
+
+```{r}
+dat <- mainDF %>%
+  select(Year, Month, Day, Measurement, Value) %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  filter(!is.na(Value))
+dat$date <-
+  as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
+
+dat$Year <- as.numeric(as.POSIXlt(dat$date)$year + 1900)
+dat$Month <- as.numeric(as.POSIXlt(dat$date)$mon + 1)
+dat$monthf <-
+  factor(
+    dat$Month,
+    levels = as.character(1:12),
+    labels = c(
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ),
+    ordered = TRUE
+  )
+dat$weekday = as.POSIXlt(dat$date)$wday
+dat$weekdayf <-
+  factor(
+    dat$weekday,
+    levels = rev(0:6),
+    labels = rev(c(
+      "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+    )),
+    ordered = TRUE
+  )
+dat$yearmonth <- as.yearmon(dat$date)
+dat$yearmonthf <- factor(dat$yearmonth)
+dat$week <- as.numeric(format(dat$date, "%W"))
+dat <- ddply(dat, .(yearmonthf), transform, monthweek = 1 + week - min(week))
+
+smooth_vals = predict(loess(Value ~ Year, dat))
+dat$smooth_vals <- smooth_vals
 ```
 
 

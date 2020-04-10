@@ -23,7 +23,9 @@ library(png)
 library(quantmod)
 library(reshape2)
 library(scales)
+library(plyr)
 # packages = c(
+#   'plyr'
 #   'dplyr',
 #   'tidyr',
 #   'tidyverse',
@@ -115,7 +117,7 @@ sidebar <- dashboardSidebar(
     menuItem(
       "Calendar Heatmap",
       tabName = "dashboard7",
-      icon = icon("dashboard")
+      icon = icon("calendar")
     )
   )
 )
@@ -345,15 +347,53 @@ dat <- mainDF %>%
 
 dat$date <- as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
 
+dat$Year <- as.numeric(as.POSIXlt(dat$date)$year + 1900)
+dat$Month <- as.numeric(as.POSIXlt(dat$date)$mon + 1)
+dat$monthf <-
+  factor(
+    dat$Month,
+    levels = as.character(1:12),
+    labels = c(
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ),
+    ordered = TRUE
+  )
+dat$weekday = as.POSIXlt(dat$date)$wday
+dat$weekdayf <-
+  factor(
+    dat$weekday,
+    levels = rev(0:6),
+    labels = rev(c(
+      "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+    )),
+    ordered = TRUE
+  )
+dat$yearmonth <- as.yearmon(dat$date)
+dat$yearmonthf <- factor(dat$yearmonth)
+dat$week <- as.numeric(format(dat$date, "%W"))
+dat <- ddply(dat, .(yearmonthf), transform, monthweek = 1 + week - min(week))
+
+smooth_vals = predict(loess(Value ~ Year, dat))
+dat$smooth_vals <- smooth_vals
 
 ######################### 3. define input output ##########################
 server <- function(input, output, session) {
-  
   #----------------------------------------dashboard 8-------------------------------
   output$my2 <- renderImage({
     list(src = "temperature_trend.gif",
          contentType = 'image/gif'
-    )})
+    )}, deleteFile = FALSE)
   #----------------------------------------dashboard 7-------------------------------
   output$my_calendar <- renderUI({
 
@@ -384,7 +424,7 @@ server <- function(input, output, session) {
         filter(Year >= input$calendaryear[1]) %>% 
         ggplot(aes(monthweek, weekdayf, fill = Value)) +
         geom_tile(colour = "white") + 
-        facet_grid(year ~ monthf) + 
+        facet_grid(Year ~ monthf) + 
         scale_fill_gradient(low = "yellow", high = "red") +
         labs(title = "Heatmap Across the Years", fill = input$my_measure) + 
         xlab("Week of Month") + ylab("")
@@ -395,7 +435,7 @@ server <- function(input, output, session) {
         filter(Year >= input$calendaryear[1]) %>% 
         ggplot(aes(monthweek, weekdayf, fill = Value)) +
         geom_tile(colour = "white") + 
-        facet_grid(year ~ monthf) + 
+        facet_grid(Year ~ monthf) + 
         scale_fill_gradient(low = "yellow", high = "red") +
         labs(title = "Heatmap Across the Years", fill = input$my_measure) + 
         xlab("Week of Month") + ylab("")
