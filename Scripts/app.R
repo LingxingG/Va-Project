@@ -1,11 +1,14 @@
 ####################### 1. define Package to install #######################
 packages = c(
   'dplyr',
+  'tidyr',
   'tidyverse',
   'sf',
   'tmap',
+  "lubridate",
   'plotly',
   'shiny',
+  "readr",
   'stringr',
   'tmaptools',
   'ggstatsplot',
@@ -16,14 +19,17 @@ packages = c(
   "htmlwidgets",
   'leaflet',
   "shinythemes",
-  "ggrepel",
   "forcats",
   "shinydashboard",
   'waiter',
   'highcharter',
-  'shinycssloaders'
+  'shinycssloaders',
+  "purrr",
+  "viridis",
+  'rlist',
+  'hrbrmisc'
 )
-
+devtools::install_github("hrbrmstr/hrbrmisc")
 for (p in packages) {
   if (!require(p, character.only = T)) {
     install.packages(p)
@@ -84,8 +90,8 @@ dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         titlePanel("Map Plot"),
-                        fluidRow(column(4, tmapOutput("lxmap")),
-                                 column(4, tmapOutput("lxmap2"))),
+                        fluidRow(column(4, leafletOutput("lxmap")),
+                                 column(4, leafletOutput("lxmap2"))),
                         br(),
                         fluidRow(column(4, uiOutput("sYear")),
                                  column(4, uiOutput("sMonth")))
@@ -159,11 +165,10 @@ dashboard5 <- tabItem(tabName = "dashboard5",
                         ))
                       ))
 
-
 dashboard6 <- tabItem(tabName = "dashboard6",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Weathers Trend"),
+                        titlePanel("Singapore Temperature Change (1982-2019)"),
                         fluidRow(withSpinner(
                           highchartOutput("hc2", width = "80%", height = "550px")
                         ))
@@ -192,11 +197,6 @@ mpsz <- st_read(dsn = "geospatial",
 mainDF <- read.csv("merged data\\dataset.csv")
 mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
 
-rainfall3 <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-  group_by(Region, SZ, Station,Year, Month) %>%
-  summarise(mean_rain = mean(Value, na.rm = TRUE))
-
 rainfall <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
   group_by(Region, SZ, Station,Year, Month) %>%
@@ -215,87 +215,90 @@ masterDF <- rainfall %>%
                              "Oct","Nov","Dec"))
 masterDF$mean_temp = temperature$mean_temp
 
-#--------------Weathers Radials------------
+#--------------Weathers trends------------
 Mastertemp <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-  select(Region,Year, date, Value) %>%
-  group_by(Year,Region,date) %>%
-  summarise(mean_temperaturec  = mean(Value, na.rm = TRUE))
-
-temperature_max <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Maximum Temperature")) %>%
-  select(Region,Year, date, Value) %>%
-  group_by(Year,Region,date) %>%
-  summarise(max_temperaturec = mean(Value, na.rm = TRUE))
-
-temperature_min <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Minimum Temperature")) %>%
-  select(Region, Year, date, Value) %>%
-  group_by(Year, Region, date) %>%
-  summarise(min_temperaturec = mean(Value, na.rm = TRUE))
-
-
-Mastertemp$max_temperaturec = temperature_max$max_temperaturec
-Mastertemp$min_temperaturec = temperature_min$min_temperaturec
+  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+  group_by(Year, Month) %>%
+  summarise(median = median(Value, na.rm = TRUE),
+            lower = min(Value, na.rm = TRUE),
+            upper = max(Value, na.rm = TRUE),
+            avg = mean(Value, na.rm =TRUE)) %>%
+  na.omit()
+Mastertemp$date = as.Date(with(Mastertemp, paste(Year,month.abb[Month], "01", sep=" ")), "%Y %b %d")
+smooth_vals <- predict(loess(median~Year,Mastertemp))
+Mastertemp$smooth_vals <- smooth_vals
 
 Mastertemp <- Mastertemp %>%
-  na.omit()
+  mutate_at(c(3:6,8), funs(round(., 1))) 
+
 
 Year_min <- min(Mastertemp[, "Year"], na.rm = TRUE)
 Year_max <- max(Mastertemp[, "Year"], na.rm = TRUE)
 
-#--------------Weathers Trendss------------
-Mastertemp2 <- mainDF
-Mastertemp2$Month = match(Mastertemp2$Month, month.abb)
-Mastertemp2$date = as.Date(with(Mastertemp2, paste(Day,Month, Year, sep="-")), "%d-%m-%Y")
+#--------------Weathers Radials------------
+Mastertemp2 <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+  select(Region,Year, date, Value) %>%
+  group_by(Year,Region,date) %>%
+  summarise(min_temperaturec = min(Value, na.rm = TRUE),
+            max_temperaturec = max(Value, na.rm = TRUE),
+            mean_temperaturec = mean(Value, na.rm = TRUE),
+            median_temperaturec = median(Value, na.rm = TRUE)) %>%
+  na.omit()
+
+smooth_vals <- predict(loess(median_temperaturec ~Year,Mastertemp2))
+Mastertemp2$smooth_vals <- smooth_vals
 
 Mastertemp2 <- Mastertemp2 %>%
-  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
-  group_by(Year, Month) %>%
-  summarise(med_temp = median(Value, na.rm = TRUE),
-            min_temp = min(Value, na.rm = TRUE),
-            max_temp = max(Value, na.rm = TRUE)) %>%
-  na.omit() %>%
-  mutate(Day = 1)
-
-Mastertemp2$date = as.Date(with(Mastertemp2, paste(Year,month.abb[Month], Day, sep=" ")), "%Y %b %d")
-
-smooth_vals = predict(loess(med_temp~Year,Mastertemp2))
-Mastertemp2$smooth_vals <- round(smooth_vals,2)
+  mutate_at(4:8, funs(round(., 1)))
 
 ######################### 3. define input output ##########################
 server <- function(input, output, session) {
   #----------------------------------------dashboard 6---------------------------------------
   
   output$hc2 <- renderHighchart({
-    x <- c("Max","Median","Min","Predict")
-    y <- sprintf("{point.%s}", c("max_temp","med_temp","min_temp","smooth_vals"))
+    x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
+    y <-
+      sprintf("{point.%s}", c("upper", "median", "lower", "smooth_vals"))
     tltip <- tooltip_table(x, y)
     
     median_tmp <- mainDF %>%
       filter(str_detect(mainDF$Measurement, "Temperature"))
     
-    med = median(median_tmp$Value, na.rm = TRUE)
+    med <- median(median_tmp$Value, na.rm = TRUE)
+    low <- min(median_tmp$Value, na.rm = TRUE)
+    high = max(median_tmp$Value, na.rm = TRUE)
     
-    hchart(Mastertemp2, type = "columnrange",
-           hcaes(x = date, low = min_temp, high = max_temp,
-                 color = med_temp)) %>% 
-      hc_yAxis(tickPositions = c(10, med, 40),
-               gridLineColor = "#B71C1C",
-               labels = list(format = "{value} C", useHTML = TRUE)) %>% 
-      hc_add_series(data = Mastertemp2,type = "line", hcaes(x = date, y = smooth_vals),
-                    name = "Fit", id = "fit") %>%
+    hchart(Mastertemp,
+           type = "columnrange",
+           hcaes(
+             x = date,
+             low = lower,
+             high = upper,
+             color = smooth_vals
+           )) %>%
+      hc_yAxis(
+        tickPositions = c(low -5, med, high +5),
+        gridLineColor = "#000000",
+        labels = list(format = "{value} C", useHTML = TRUE)
+      ) %>%
+      hc_add_series(
+        data = Mastertemp,
+        type = "line",
+        hcaes(x = date, y = smooth_vals),
+        color = "#B71C1C"
+      ) %>%
       hc_tooltip(
         useHTML = TRUE,
         headerFormat = as.character(tags$small("{point.x: %Y %b}")),
         pointFormat = tltip
-      ) %>% 
-      hc_add_theme(hc_theme_db())
+      )
   })
+  
   
   #----------------------------------------dashboard 5---------------------------------------
   output$hcRegion <- renderUI({
-    tmp <- Mastertemp %>%
+    tmp <- Mastertemp2 %>%
       filter(Year == as.numeric(input$hc_Year))
     selectInput(
       inputId = "hc_Region",
@@ -309,12 +312,12 @@ server <- function(input, output, session) {
     x <- c("Min", "Mean", "Max")
     y <- sprintf("{point.%s}", c("min_temperaturec", "mean_temperaturec", "max_temperaturec"))
     tltip <- tooltip_table(x, y)
-      
-    Mastertemp2 <- Mastertemp %>%
+    
+    Mastertemp3 <- Mastertemp2 %>%
       filter(Region == as.character(input$hc_Region)) %>%
       filter(Year == as.numeric(input$hc_Year))
     
-    hchart(Mastertemp2, type = "columnrange",
+    hchart(Mastertemp3, type = "columnrange",
            hcaes(x = date, low = min_temperaturec, high = max_temperaturec,
                  color = mean_temperaturec)) %>% 
       hc_chart(polar = TRUE) %>%
@@ -324,7 +327,7 @@ server <- function(input, output, session) {
         title = list(text = ""), gridLineWidth = 0.5,
         labels = list(format = "{value: %b}")) %>% 
       hc_tooltip(useHTML = TRUE, pointFormat = tltip,
-                 headerFormat = as.character(tags$small("{point.x:%Y %b}")))
+                 headerFormat = as.character(tags$small("{point.x:%d %B, %Y}")))
   })
   
   #----------------------------------------dashboard 4---------------------------------------
@@ -354,30 +357,39 @@ server <- function(input, output, session) {
              aes(
                x = round(mean_rain, 2),
                y = round(mean_temp, 2),
-               color = Month
+               color = as.factor(Month),
+               text = paste(
+                 "Mean Rain Precipitation: ",
+                 round(mean_rain, 2),
+                 "mm",
+                 "<br>Mean Temperature: ",
+                 round(mean_temp, 2),
+                 "(\u00B0C)" ,
+                 "<br>Month: ",
+                 Month
+               )
              )) +
-      geom_point() +
+      geom_point(alpha = 0.4) +
       theme(legend.position = "none",
             legend.title = element_blank()) +
-      labs(y = " Mean Temperature (\u00B0C)", x = "Rain Precipitation (mm)")
+      labs(y = "Temperature (\u00B0C)", x = "Rain Precipitation (mm)")
     
-    db4scatter <-
-      ggplotly(
-        scatterPlot 
-      )
+    db4scatter <- ggplotly(scatterPlot, tooltip = "text")
     
     raindensity <-
-      ggplot(tanny4(), aes(mean_rain, fill = '#E69F00')) +
-      geom_density(alpha = .5) +
-      scale_fill_manual(values = c('#E69F00')) +
+      ggplot(tanny4(), aes(round(mean_rain,2))) +
+      geom_histogram(aes(y = ..density..), colour = "black", fill = "white") +
+      geom_density(alpha = .5, fill = '#C7E4EA') +
       theme(legend.position = "none")
     
     db4rain <- ggplotly(raindensity)
     
     tempdensity <-
-      ggplot(tanny4(), aes(x = mean_temp, fill = '#E69F00')) +
-      geom_density(alpha = .5) +
-      scale_fill_manual(values = c('#999999')) +
+      ggplot(tanny4(), aes(round(mean_temp,2))) +
+      geom_histogram(aes(y = ..density..,),
+                     colour = "black",
+                     fill = "white") +
+      geom_density(alpha = .5, fill = '#E69F00') +
       theme(legend.position = "none") +
       coord_flip()
     
