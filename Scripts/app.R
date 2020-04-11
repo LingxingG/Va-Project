@@ -12,7 +12,6 @@ library(ggplot2)
 library(ggridges)
 library(htmlwidgets)
 library(leaflet)
-library(forcats)
 library(shinydashboard)
 library(waiter)
 library(highcharter)
@@ -100,60 +99,81 @@ homepage <- tabItem(tabName = "homepage",
 dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
+                        fluidRow(
                         titlePanel("Map Plot"),
-                        fluidRow(column(4, uiOutput("sYear")),
-                                 column(4, uiOutput("sMonth"))),
-                        fluidRow(column(4, leafletOutput("lxmap")),
-                                 column(4, leafletOutput("lxmap2")))
-                      ))
+                        sidebarLayout(
+                          sidebarPanel(fluidRow(uiOutput("sYear")),
+                                     fluidRow(uiOutput("sMonth")),
+                                     width = 2),
+                        mainPanel(fluidRow(
+                          column(6, leafletOutput("lxmap")),
+                          column(6, leafletOutput("lxmap2"))
+                        ), width = 10))
+                      )))
 
 dashboard2 <- tabItem(tabName = "dashboard2",
-                      withSpinner(fluidPage(
+                      fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Violin Plot"),
                         fluidRow(
-                          column(5, uiOutput('tMeasure')),
-                          column(5, uiOutput("tYear1"))),
-                        fluidRow(withSpinner(plotlyOutput(
-                          "tanny1", width = "80%", height = "400px"
-                        )))
-                      )))
+                          titlePanel("Violin Plot"),
+                          sidebarLayout(
+                            sidebarPanel(fluidRow(uiOutput('tMeasure')),
+                                         fluidRow(uiOutput("tYear1"), width = 2)),
+                            mainPanel(fluidRow(withSpinner(
+                              plotlyOutput("tanny1", width = "80%", height = "400px")
+                            )), width = 10)
+                          )
+                        )
+                      ))
+
 
 dashboard3 <- tabItem(tabName = "dashboard3",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Ridge Plot"),
-                        fluidRow(uiOutput("tYear3"),
-                                 fluidRow(
-                                   column(6, plotOutput(
-                                     "tanny2", width = "100%", height = "400px"
-                                   )),
-                                   column(6, plotOutput(
-                                     "tanny3", width = "100%", height = "400px"
-                                   ))
-                                 ))
-                      ))
+                        fluidRow(
+                          titlePanel("Ridge Plot"),
+                          sidebarLayout(
+                            sidebarPanel(fluidRow(uiOutput("tYear3")), width = 2),
+                            mainPanel(fluidRow(
+                              column(6, plotOutput(
+                                "tanny2", width = "100%", height = "400px"
+                              )),
+                              column(6, plotOutput(
+                                "tanny3", width = "100%", height = "400px"
+                              ))
+                            ), width = 10)
+                          )
+                        )
+                      ))  
 
 dashboard4 <- tabItem(tabName = "dashboard4",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Correlation Plot"),
-                        fluidRow(),
-                        fluidRow(uiOutput("tYear")),
-                        fluidRow(withSpinner(plotlyOutput("tanny4"))),
+                        fluidRow(
+                          titlePanel("Correlation Plot"),
+                          sidebarLayout(
+                            sidebarPanel(fluidRow(uiOutput("tYear")), width = 2),
+                            mainPanel(fluidRow(withSpinner(
+                              plotlyOutput("tanny4")
+                            )), width = 10)
+                          )
+                        )
                       ))
 
 dashboard5 <- tabItem(tabName = "dashboard5",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Temperature Radials"),
                         fluidRow(
-                          column(4, uiOutput('hcr')),
-                          column(4, uiOutput('hcRegion'))),
-                        fluidRow(column(
-                          6,
-                          withSpinner( highchartOutput("hc", width = "100%", height = "400px"))
-                        ))
+                          titlePanel("Temperature Radials"),
+                          sidebarLayout(
+                            sidebarPanel(fluidRow(uiOutput('hcr')),
+                                         fluidRow(uiOutput('hcRegion')),
+                                         width = 2),
+                            mainPanel(fluidRow(withSpinner(
+                              highchartOutput("hc", width = "100%", height = "550px")
+                            )), width = 10)
+                          )
+                        )
                       ))
 
 dashboard6 <- tabItem(tabName = "dashboard6",
@@ -168,9 +188,15 @@ dashboard6 <- tabItem(tabName = "dashboard6",
 dashboard7 <- tabItem(tabName = "dashboard7",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        fluidRow(column(4, uiOutput("my_measure")),
-                                 column(4, uiOutput("my_calendar"))),
-                        fluidRow(withSpinner(plotOutput("my1")))
+                        titlePanel("Heatmap Across the Years"),
+                        sidebarLayout(
+                          sidebarPanel(fluidRow(uiOutput("my_measure")),
+                                       fluidRow(uiOutput("my_calendar")), width =
+                                         2),
+                          mainPanel(fluidRow(withSpinner(plotOutput(
+                            "my1"
+                          )), width = 10))
+                        )
                       ))
 
 dashboard8 <- tabItem(tabName = "dashboard8",
@@ -199,10 +225,9 @@ ui <- dashboardPage(header, sidebar, body)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.3 import attribute data ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
-
 # mainDF <- read.csv("merged data/dataset.csv")
 # mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
-
+mainDF <- readRDS("shiny data/mainDF.RDS")
 #-------------- Non Maps ------------
 # rainfall <- mainDF %>%
 #   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
@@ -427,7 +452,7 @@ server <- function(input, output, session) {
         geom_tile(colour = "white") + 
         facet_grid(Year ~ monthf) + 
         scale_fill_gradient(low = "yellow", high = "red") +
-        labs(title = "Heatmap Across the Years", fill = input$my_measure) + 
+        labs(fill = input$my_measure) +
         xlab("Week of Month") + ylab("")
     }
     else {
@@ -438,7 +463,7 @@ server <- function(input, output, session) {
         geom_tile(colour = "white") + 
         facet_grid(Year ~ monthf) + 
         scale_fill_gradient(low = "yellow", high = "red") +
-        labs(title = "Heatmap Across the Years", fill = input$my_measure) + 
+        labs(fill = input$my_measure) + 
         xlab("Week of Month") + ylab("")
     }
   })
@@ -527,7 +552,9 @@ server <- function(input, output, session) {
         title = list(text = ""), gridLineWidth = 0.5,
         labels = list(format = "{value: %b}")) %>% 
       hc_tooltip(useHTML = TRUE, pointFormat = tltip,
-                 headerFormat = as.character(tags$small("{point.x:%d %B, %Y}")))
+                 headerFormat = as.character(tags$small("{point.x:%d %B, %Y}"))) %>%
+      hc_legend(align = "right", verticalAlign = "top",layout = "vertical")
+    
   })
   
   #----------------------------------------dashboard 4 Correlation Plot---------------------------------------
@@ -570,13 +597,12 @@ server <- function(input, output, session) {
                )
              )) +
       geom_point(alpha = 0.8) +
-      stat_smooth(method = "lm", col = "black", size = 0.7,
-                  fill = "gray60", alpha = 0.2) +
-      theme(legend.position = "none",
-            legend.title = element_blank()) +
+      scale_color_manual(values = c("#6f7778", "#E7B800", "#FC4E07", "#293352", "#52854C"), 
+                         labels = c('East', 'Central', 'Norht', 'North-East', 'West'), name = '') +
+      theme(legend.position = "top") +
       labs(y = "Temperature (\u00B0C)", x = "Rain Precipitation (mm)")
-    
-    db4scatter <- ggplotly(scatterPlot, tooltip = "text")
+    db4scatter <- ggplotly(scatterPlot, tooltip = "text") %>%
+      layout(legend = list(orientation = "h"))
     
     raindensity <-
       ggplot(tanny4(), aes(mean_rain)) +
