@@ -26,8 +26,7 @@ css <- "
 }
 "
 ######################### 2. define dashboard UI ##########################
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~ 2.1 define dashboard elemets #~~~~~~~~~~~~~~~~~~~~~~~~~ 
+#~~~~~~~~~~~~~~~2.1 define dashboard elemets #~~~~~~~~~~~~~~~~~
 header <- dashboardHeader(title = "Rain and Shiny Dashboard")
 
 sidebar <- dashboardSidebar(
@@ -156,7 +155,8 @@ dashboard5 <- tabItem(tabName = "dashboard5",
                         fluidRow(column(
                           6,
                           withSpinner( highchartOutput("hc", width = "100%", height = "400px"))
-                        ))
+                        )),
+                        fluidRow(img(src='Viridis.png', align = "right", width="300px", height = "65px"),)
                       ))
 
 dashboard6 <- tabItem(tabName = "dashboard6",
@@ -165,7 +165,8 @@ dashboard6 <- tabItem(tabName = "dashboard6",
                         titlePanel("Singapore Temperature Change (1982-2019)"),
                         fluidRow(withSpinner(
                           highchartOutput("hc2", height = "550px")
-                        ))
+                        )),
+                        fluidRow(img(src='Viridis.png', align = "right", width="300px", height = "65px"),)
                       ))
 
 dashboard7 <- tabItem(tabName = "dashboard7",
@@ -479,8 +480,7 @@ server <- function(input, output, session) {
         title = list(text = ""), gridLineWidth = 0.5,
         labels = list(format = "{value: %b}")) %>% 
       hc_tooltip(useHTML = TRUE, pointFormat = tltip,
-                 headerFormat = as.character(tags$small("{point.x:%d %B, %Y}"))) %>%
-      hc_legend(align = "right", verticalAlign = "top",layout = "vertical")
+                 headerFormat = as.character(tags$small("{point.x:%d %B, %Y}")))
     
   })
   #----------------------------------------dashboard 4 Correlation Plot---------------------------------------
@@ -718,18 +718,22 @@ server <- function(input, output, session) {
     selectInput(
       inputId = "MonthLX",
       label = "Month:",
-      choices = c("Jan","Feb","Mar",
+      choices = c("All", "Jan","Feb","Mar",
                   "Apr","May","Jun",
                   "Jul","Aug","Sep",
                   "Oct","Nov","Dec"),
-      selected = "Jan"
+      selected = "All"
     )
   })
   
   tmp<-reactive({
     tmp2 <- masterDF2 %>%
-      filter(Year == as.numeric(input$YearLX)) %>%
-      filter(Month == as.character(input$MonthLX))
+      filter(Year == as.numeric(input$YearLX))
+    
+    if(input$MonthLX != "All"){
+      tmp2 <- tmp2 %>%
+        filter(Month == as.character(input$MonthLX))
+    }
     
     tmp2 <- left_join(mpsz, tmp2,
                       by = c("SUBZONE_N" = "SZ")) %>%
