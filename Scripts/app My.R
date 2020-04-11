@@ -101,7 +101,7 @@ mainDF <- read_csv("merged data/dataset.csv")
 
 dat <- mainDF %>%
   select(Year, Month, Day, Measurement, Value) %>%
-  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature|Daily Rainfall Total")) %>%
   filter(!is.na(Value))
 
 dat$date <- as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
