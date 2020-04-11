@@ -1,7 +1,6 @@
 ####################### 1. define Package to install #######################
 library(rsconnect)
 library(shiny)
-library(plyr)
 library(dplyr)
 library(tidyverse)
 library(sf)
@@ -18,46 +17,6 @@ library(shinydashboard)
 library(waiter)
 library(highcharter)
 library(shinycssloaders)
-library(transformr)
-library(gifski)
-library(png)
-library(quantmod)
-library(reshape2)
-library(scales)
-# packages = c(
-#   'plyr'
-#   'dplyr',
-#   'tidyr',
-#   'tidyverse',
-#   'sf',
-#   'tmap',
-#   'plotly',
-#   'shiny',
-#   'stringr',
-#   'tmaptools',
-#   'ggplot2',
-#   'ggridges',
-#   "htmlwidgets",
-#   'leaflet',
-#   "forcats",
-#   "shinydashboard",
-#   'waiter',
-#   'highcharter',
-#   'shinycssloaders',
-# 'transformr',
-# 'gifski',
-# 'png',
-# 'quantmod',
-# 'reshape2',
-# 'scales'
-# )
-# 
-# for (p in packages) {
-#   if (!require(p, character.only = T)) {
-#     install.packages(p)
-#   }
-#   library(p, character.only = T)
-# }
 
 ################### 1.1 CSS ##########################
 css <- "
@@ -85,7 +44,7 @@ sidebar <- dashboardSidebar(
       icon = icon("map")
     ),
     menuItem(
-      "Weathers Radials",
+      "Temperature Radials",
       tabName = "dashboard5",
       icon = icon("dashboard")
     ),
@@ -102,14 +61,17 @@ sidebar <- dashboardSidebar(
     menuItem(
       "Ridge Plot",
       tabName = "dashboard3",
-      icon = icon("dashboard")
+      icon = icon("mountain")
     ),
     menuItem(
-      "Weathers Trends",
-      tabName = "dashboard6",
-      icon = icon("dashboard"),
+      "Trends",
+      icon = icon("chart-line"),
       menuItem(
-        "Climate Trend Animation",
+        "Temperature Trends",
+         tabName = "dashboard6",
+         icon = icon("dashboard")), 
+      menuItem(
+        "Tempertaure Trend Animated",
         tabName = "dashboard8",
         icon = icon("dashboard")
       )
@@ -125,24 +87,24 @@ sidebar <- dashboardSidebar(
 #~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.1 define dashboard body elements ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 homepage <- tabItem(tabName = "homepage",
                     fluidPage(fluidRow(
-                      HTML('<center><img src="Rain_Shine.png" width="400"></center>')
+                      HTML('<center><img src="Rain_Shine.png" width="300"></center>')
                       
                     )),
                     fluidRow(
-                        column(12, h1("Problem and Motivation")),
-                        column(12, h4("Although the weather in Singapore does not seem to be an essential part of everyone's lifestyle, the weather can play an important role in affecting one's health.")),
-                        column(12, h4(
-                          "Our team aims to present Singapore's weather data in more user-friendly and meaningful interpretation ways. Through our user-friendly dashboards visualization, we hope to provide users in-depth insights, to identify the trends and patterns inherent within the weather data available, and answer questions regarding the changes in Singapore's weather from available historical data.")
+                        column(12, h2("Problem and Motivation")),
+                        column(12, h5("The current reporting of Singapore's climate has always been primitive and thus it is challenging for viewers to obtain in-depth insights. In 2019, multiple news companies reported that Singapore is heating up twice as fast as the rest of the world. When combined with the island's constant high humidity, it could be life-threatening. Professor Matthias Roth of the department of geography at the National University of Singapore (NUS) attributed the rising temperatures to global warming and the Urban Heat Island (UHI) effect. However, there was no data given to back up their claims on Singapore's climate change.")),
+                    ),
+                    fluidRow(column(12, h5(
+                    "Our team aims to present Singapore's climate data in more user-friendly and meaningful interpretation ways. Through Rain&Shine, an interactive and user-friendly visualization dashboard, that shows the distribution of the climate by Subzone, Region, and Singapore as a whole, we hope to provide Singaporeans with knowledge and in-depth insights into Singapore's Climate. Additionally, we want to identify the trends inherent within the weather data available and answer questions regarding the changes in Singapore's climate from available historical data.")
                     )))
 dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         titlePanel("Map Plot"),
-                        fluidRow(column(4, leafletOutput("lxmap")),
-                                 column(4, leafletOutput("lxmap2"))),
-                        br(),
                         fluidRow(column(4, uiOutput("sYear")),
-                                 column(4, uiOutput("sMonth")))
+                                 column(4, uiOutput("sMonth"))),
+                        fluidRow(column(4, leafletOutput("lxmap")),
+                                 column(4, leafletOutput("lxmap2")))
                       ))
 
 dashboard2 <- tabItem(tabName = "dashboard2",
@@ -160,7 +122,7 @@ dashboard2 <- tabItem(tabName = "dashboard2",
                                    )
                                  )),
                         fluidRow(plotlyOutput(
-                          "tanny1", width = "80%", height = "550px"
+                          "tanny1", width = "80%", height = "400px"
                         ))
                       ))
 
@@ -197,9 +159,9 @@ dashboard5 <- tabItem(tabName = "dashboard5",
                           sliderInput(
                             inputId = "hc_Year",
                             label = "Year:",
-                            min = 1982,
+                            min = 2009,
                             max = 2019,
-                            value = 1982,
+                            value = 2009,
                             step = 1,
                             sep = "",
                             animate = animationOptions(interval = 5000,
@@ -209,7 +171,7 @@ dashboard5 <- tabItem(tabName = "dashboard5",
                         column(4, uiOutput('hcRegion'))),
                         fluidRow(column(
                           6,
-                          highchartOutput("hc", width = "100%", height = "550px")
+                          highchartOutput("hc", width = "100%", height = "400px")
                         ))
                       ))
 
@@ -256,135 +218,142 @@ ui <- dashboardPage(header, sidebar, body)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.3 import attribute data ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
-mainDF <- read.csv("merged data/dataset.csv")
-mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
+
+
+# mainDF <- read.csv("merged data/dataset.csv")
+# mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
 
 #-------------- Non Maps ------------
-rainfall <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_rain = mean(Value, na.rm = TRUE))
-
-temperature <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_temp = mean(Value, na.rm = TRUE))
-
-masterDF <- rainfall %>%
-  mutate(Month = fct_relevel(Month, 
-                             "Jan","Feb","Mar",
-                             "Apr","May","Jun",
-                             "Jul","Aug","Sep",
-                             "Oct","Nov","Dec"))
-masterDF$mean_temp = temperature$mean_temp
-masterDF <- masterDF %>%
-  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) %>%
-  na.omit()
-
+# rainfall <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+#   group_by(Region,SZ,Year,Month) %>%
+#   summarise(mean_rain = mean(Value, na.rm = TRUE))
+# 
+# temperature <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+#   group_by(Region,SZ,Year,Month) %>%
+#   summarise(mean_temp = mean(Value, na.rm = TRUE))
+# 
+# masterDF <- rainfall %>%
+#   mutate(Month = fct_relevel(Month, 
+#                              "Jan","Feb","Mar",
+#                              "Apr","May","Jun",
+#                              "Jul","Aug","Sep",
+#                              "Oct","Nov","Dec"))
+# masterDF$mean_temp = temperature$mean_temp
+# masterDF <- masterDF %>%
+#   mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) %>%
+#   na.omit()
+masterDF <- readRDS("shiny data/masterDF.RDS")
 #-------------- Maps----------------
-rainfall <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-  group_by(Year,SZ, Month) %>%
-  summarise(mean_rain = mean(Value, na.rm = TRUE))
-
-temperature <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-  group_by(Year,SZ, Month) %>%
-  summarise(mean_temp = mean(Value, na.rm = TRUE))
-
-masterDF2 <- rainfall %>%
-  mutate(Month = fct_relevel(Month, 
-                             "Jan","Feb","Mar",
-                             "Apr","May","Jun",
-                             "Jul","Aug","Sep",
-                             "Oct","Nov","Dec"))
-masterDF2$mean_temp = temperature$mean_temp
-masterDF2<- masterDF2 %>%
-  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
+# rainfall <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+#   group_by(Year,SZ, Month) %>%
+#   summarise(mean_rain = mean(Value, na.rm = TRUE))
+# 
+# temperature <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+#   group_by(Year,SZ, Month) %>%
+#   summarise(mean_temp = mean(Value, na.rm = TRUE))
+# 
+# masterDF2 <- rainfall %>%
+#   mutate(Month = fct_relevel(Month, 
+#                              "Jan","Feb","Mar",
+#                              "Apr","May","Jun",
+#                              "Jul","Aug","Sep",
+#                              "Oct","Nov","Dec"))
+# masterDF2$mean_temp = temperature$mean_temp
+# masterDF2<- masterDF2 %>%
+#   mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
+masterDF2 <- readRDS("shiny data/masterDF2.RDS")
 
 #--------------Weathers trends------------
-Mastertemp <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
-  group_by(Year, Month) %>%
-  summarise(median = median(Value, na.rm = TRUE),
-            lower = min(Value, na.rm = TRUE),
-            upper = max(Value, na.rm = TRUE),
-            avg = mean(Value, na.rm =TRUE)) %>%
-  na.omit()
-Mastertemp$date = as.Date(with(Mastertemp, paste(Year,month.abb[Month], "01", sep=" ")), "%Y %b %d")
-smooth_vals <- predict(loess(median~Year,Mastertemp))
-Mastertemp$smooth_vals <- smooth_vals
-
-Mastertemp <- Mastertemp %>%
-  mutate_at(c(3:6,8), funs(round(., 1))) 
+# Mastertemp <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+#   group_by(Year, Month) %>%
+#   summarise(median = median(Value, na.rm = TRUE),
+#             lower = min(Value, na.rm = TRUE),
+#             upper = max(Value, na.rm = TRUE),
+#             avg = mean(Value, na.rm =TRUE)) %>%
+#   na.omit()
+# Mastertemp$date = as.Date(with(Mastertemp, paste(Year,month.abb[Month], "01", sep=" ")), "%Y %b %d")
+# smooth_vals <- predict(loess(median~Year,Mastertemp))
+# Mastertemp$smooth_vals <- smooth_vals
+# 
+# Mastertemp <- Mastertemp %>%
+#   mutate_at(c(3:6,8), funs(round(., 1)))
+Mastertemp <- readRDS("shiny data/Mastertemp.RDS")
 
 Year_min <- min(Mastertemp[, "Year"], na.rm = TRUE)
 Year_max <- max(Mastertemp[, "Year"], na.rm = TRUE)
 
 #--------------Weathers Radials------------
-Mastertemp2 <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
-  select(Region,Year, date, Value) %>%
-  group_by(Year,Region,date) %>%
-  summarise(min_temperaturec = min(Value, na.rm = TRUE),
-            max_temperaturec = max(Value, na.rm = TRUE),
-            mean_temperaturec = mean(Value, na.rm = TRUE),
-            median_temperaturec = median(Value, na.rm = TRUE)) %>%
-  na.omit()
+# Mastertemp2 <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+#   select(Region,Year, date, Value) %>%
+#   group_by(Year,Region,date) %>%
+#   summarise(min_temperaturec = min(Value, na.rm = TRUE),
+#             max_temperaturec = max(Value, na.rm = TRUE),
+#             mean_temperaturec = mean(Value, na.rm = TRUE),
+#             median_temperaturec = median(Value, na.rm = TRUE)) %>%
+#   na.omit()
+# 
+# smooth_vals <- predict(loess(median_temperaturec ~Year,Mastertemp2))
+# Mastertemp2$smooth_vals <- smooth_vals
+# 
+# Mastertemp2 <- Mastertemp2 %>%
+#   mutate_at(4:8, funs(round(., 1)))
 
-smooth_vals <- predict(loess(median_temperaturec ~Year,Mastertemp2))
-Mastertemp2$smooth_vals <- smooth_vals
-
-Mastertemp2 <- Mastertemp2 %>%
-  mutate_at(4:8, funs(round(., 1)))
-
+Mastertemp2 <- readRDS("shiny data/Mastertemp2.RDS")
 #-------------- Calendar Heatmap ----------------
-dat <- mainDF %>%
-  select(Year, Month, Day, Measurement, Value) %>%
-  filter(str_detect(mainDF$Measurement, "Mean Temperature|Daily Rainfall Total")) %>%
-  filter(!is.na(Value))
+# dat <- mainDF %>%
+#   select(Year, Month, Day, Measurement, Value) %>%
+#   filter(str_detect(mainDF$Measurement, "Mean Temperature|Daily Rainfall Total")) %>%
+#   filter(!is.na(Value))
+# 
+# dat$date <- as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
+# 
+# dat$Year <- as.numeric(as.POSIXlt(dat$date)$year + 1900)
+# dat$Month <- as.numeric(as.POSIXlt(dat$date)$mon + 1)
+# dat$monthf <-
+#   factor(
+#     dat$Month,
+#     levels = as.character(1:12),
+#     labels = c(
+#       "Jan",
+#       "Feb",
+#       "Mar",
+#       "Apr",
+#       "May",
+#       "Jun",
+#       "Jul",
+#       "Aug",
+#       "Sep",
+#       "Oct",
+#       "Nov",
+#       "Dec"
+#     ),
+#     ordered = TRUE
+#   )
+# dat$weekday = as.POSIXlt(dat$date)$wday
+# dat$weekdayf <-
+#   factor(
+#     dat$weekday,
+#     levels = rev(0:6),
+#     labels = rev(c(
+#       "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+#     )),
+#     ordered = TRUE
+#   )
+# dat$yearmonth <- as.yearmon(dat$date)
+# dat$yearmonthf <- factor(dat$yearmonth)
+# dat$week <- as.numeric(format(dat$date, "%W"))
+# dat <- ddply(dat, .(yearmonthf), transform, monthweek = 1 + week - min(week))
+# 
+# smooth_vals = predict(loess(Value ~ Year, dat))
+# dat$smooth_vals <- smooth_vals
 
-dat$date <- as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
-
-dat$Year <- as.numeric(as.POSIXlt(dat$date)$year + 1900)
-dat$Month <- as.numeric(as.POSIXlt(dat$date)$mon + 1)
-dat$monthf <-
-  factor(
-    dat$Month,
-    levels = as.character(1:12),
-    labels = c(
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
-    ),
-    ordered = TRUE
-  )
-dat$weekday = as.POSIXlt(dat$date)$wday
-dat$weekdayf <-
-  factor(
-    dat$weekday,
-    levels = rev(0:6),
-    labels = rev(c(
-      "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
-    )),
-    ordered = TRUE
-  )
-dat$yearmonth <- as.yearmon(dat$date)
-dat$yearmonthf <- factor(dat$yearmonth)
-dat$week <- as.numeric(format(dat$date, "%W"))
-dat <- ddply(dat, .(yearmonthf), transform, monthweek = 1 + week - min(week))
-
-smooth_vals = predict(loess(Value ~ Year, dat))
-dat$smooth_vals <- smooth_vals
+dat <- readRDS("shiny data/dat.RDS")
 
 ######################### 3. define input output ##########################
 server <- function(input, output, session) {
