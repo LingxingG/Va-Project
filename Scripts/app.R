@@ -61,7 +61,7 @@ sidebar <- dashboardSidebar(
     menuItem(
       "Ridge Plot",
       tabName = "dashboard3",
-      icon = icon("mountain")
+      icon = icon("dashboard")
     ),
     menuItem(
       "Trends",
@@ -69,11 +69,11 @@ sidebar <- dashboardSidebar(
       menuItem(
         "Temperature Trends",
          tabName = "dashboard6",
-         icon = icon("dashboard")), 
+         icon = icon("chart-line")), 
       menuItem(
         "Tempertaure Trend Animated",
         tabName = "dashboard8",
-        icon = icon("dashboard")
+        icon = icon("chart-line")
       )
     ),
     menuItem(
@@ -108,23 +108,15 @@ dashboard1 <- tabItem(tabName = "dashboard1",
                       ))
 
 dashboard2 <- tabItem(tabName = "dashboard2",
-                      fluidPage(
+                      withSpinner(fluidPage(
                         tags$style(type = "text/css", css),
                         titlePanel("Violin Plot"),
                         fluidRow(column(5, uiOutput("tYear1")),
-                                 column(
-                                   5,
-                                   selectInput(
-                                     inputId = "db2type",
-                                     label = "Please Select:",
-                                     choices = c("Rainfall", "Temperature"),
-                                     selected = "Mean Rainfall"
-                                   )
-                                 )),
+                                 column(5, uiOutput('tMeasure'))),
                         fluidRow(plotlyOutput(
                           "tanny1", width = "80%", height = "400px"
                         ))
-                      ))
+                      )))
 
 dashboard3 <- tabItem(tabName = "dashboard3",
                       fluidPage(
@@ -154,21 +146,9 @@ dashboard5 <- tabItem(tabName = "dashboard5",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         titlePanel("Weathers Radials"),
-                        fluidRow(column(
-                          4,
-                          sliderInput(
-                            inputId = "hc_Year",
-                            label = "Year:",
-                            min = 2009,
-                            max = 2019,
-                            value = 2009,
-                            step = 1,
-                            sep = "",
-                            animate = animationOptions(interval = 5000,
-                                                       loop = FALSE)
-                          )
-                        ),
-                        column(4, uiOutput('hcRegion'))),
+                        fluidRow(
+                          column(4, uiOutput('hcr')),
+                          column(4, uiOutput('hcRegion'))),
                         fluidRow(column(
                           6,
                           highchartOutput("hc", width = "100%", height = "400px")
@@ -193,8 +173,8 @@ dashboard7 <- tabItem(tabName = "dashboard7",
                       ))
 
 dashboard8 <- tabItem(tabName = "dashboard8",
-                      fluidPage(tags$style(type = "text/css", css),
-                                fluidRow(plotOutput("my2"))))
+                      withSpinner(fluidPage(tags$style(type = "text/css", css),
+                                fluidRow(plotOutput("my2")))))
 #~~~~~~~~~~~~~~~~~~~~~~~~~ 2.1.2 Fill in dashboard elements ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 body <- dashboardBody(
   use_waiter(),
@@ -229,10 +209,36 @@ mpsz <- st_read(dsn = "geospatial",
 #   group_by(Region,SZ,Year,Month) %>%
 #   summarise(mean_rain = mean(Value, na.rm = TRUE))
 # 
+# rainfall_30 <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Highest 30 Min Rainfall")) %>%
+#   group_by(Region,SZ,Year,Month) %>%
+#   summarise(mean_rain = mean(Value, na.rm = TRUE))
+# 
+# rainfall_60 <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Highest 60 Min Rainfall")) %>%
+#   group_by(Region,SZ,Year,Month) %>%
+#   summarise(mean_rain = mean(Value, na.rm = TRUE))
+# 
+# rainfall_120 <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Highest 120 Min Rainfall")) %>%
+#   group_by(Region,SZ,Year,Month) %>%
+#   summarise(mean_rain = mean(Value, na.rm = TRUE))
+# 
 # temperature <- mainDF %>%
 #   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
 #   group_by(Region,SZ,Year,Month) %>%
 #   summarise(mean_temp = mean(Value, na.rm = TRUE))
+# 
+# temperature_max <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Maximum Temperature")) %>%
+#   group_by(Region,SZ,Year,Month) %>%
+#   summarise(mean_temp = mean(Value, na.rm = TRUE))
+# 
+# temperature_min <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Minimum Temperature")) %>%
+#   group_by(Region,SZ,Year,Month) %>%
+#   summarise(mean_temp = mean(Value, na.rm = TRUE))
+# 
 # 
 # masterDF <- rainfall %>%
 #   mutate(Month = fct_relevel(Month, 
@@ -240,10 +246,15 @@ mpsz <- st_read(dsn = "geospatial",
 #                              "Apr","May","Jun",
 #                              "Jul","Aug","Sep",
 #                              "Oct","Nov","Dec"))
+# masterDF$mean_rain_30 = rainfall_30$mean_rain
+# masterDF$mean_rain_60 = rainfall_60$mean_rain
+# masterDF$mean_rain_120 = rainfall_120$mean_rain
 # masterDF$mean_temp = temperature$mean_temp
+# masterDF$mean_temp_max = temperature_max$mean_temp
+# masterDF$mean_temp_min = temperature_min$mean_temp
 # masterDF <- masterDF %>%
-#   mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) %>%
-#   na.omit()
+#   mutate_at(vars(mean_temp,mean_rain, mean_temp_max, mean_temp_min,mean_rain_30, mean_rain_60, mean_rain_120), funs(round(., 1)))
+
 masterDF <- readRDS("shiny data/masterDF.RDS")
 #-------------- Maps----------------
 # rainfall <- mainDF %>%
@@ -349,9 +360,6 @@ Mastertemp2 <- readRDS("shiny data/Mastertemp2.RDS")
 # dat$yearmonthf <- factor(dat$yearmonth)
 # dat$week <- as.numeric(format(dat$date, "%W"))
 # dat <- ddply(dat, .(yearmonthf), transform, monthweek = 1 + week - min(week))
-# 
-# smooth_vals = predict(loess(Value ~ Year, dat))
-# dat$smooth_vals <- smooth_vals
 
 dat <- readRDS("shiny data/dat.RDS")
 
@@ -449,7 +457,21 @@ server <- function(input, output, session) {
       )
   })
   
-  #----------------------------------------dashboard 5 Climate Radials ---------------------------------------
+  #----------------------------------------dashboard 5 Temperature Radials ---------------------------------------
+  
+  output$hcr <- renderUI({
+    sliderInput(
+      inputId = "hc_Year",
+      label = "Year:",
+      min =  Year_min,
+      max = Year_max,
+      value = Year_min,
+      step = 1,
+      sep = "",
+      animate = animationOptions(interval = 5000, loop = FALSE)
+    )
+  })
+  
   output$hcRegion <- renderUI({
     tmp <- Mastertemp2 %>%
       filter(Year == as.numeric(input$hc_Year))
@@ -457,10 +479,9 @@ server <- function(input, output, session) {
       inputId = "hc_Region",
       label = "Select Region:",
       choices = unique(tmp$Region),
-      selected = unique(tmp$Region)[1]
+      selected = unique(tmp$Region)[-1]
     )
   })
-  
   
   output$hc <- renderHighchart({
     x <- c("Min", "Mean", "Max")
@@ -631,26 +652,65 @@ server <- function(input, output, session) {
                                  loop = FALSE)
     )
   })
+  
+  output$tMeasure <- renderUI({
+    selectInput(
+      inputId = "db2type",
+      label = "Please Select:",
+      choices = c("Daily Rainfall", 
+                  "Highest 30 Min Rainfall",
+                  'Highest 60 Min Rainfall',
+                  'Highest 120 Min Rainfall',
+                  'Minimum Temperature',
+                  "Mean Temperature",
+                  'Maximum Temperature'
+      ),
+      selected = "Daily Rainfall"
+    )
+  })
+  
   output$tanny1 <- renderPlotly({
     rain <- ggplot(masterDF %>%
                      filter(Year == as.numeric(input$YearTanny1)),
                    aes(factor(Month),
                        if (input$db2type == "Rainfall") {
-                         mean_rain
-                       } else{
-                         mean_temp
+                         y = mean_rain
+                       } else if (input$db2type =="Highest 30 Min Rainfall"){
+                         y = mean_rain_30
                        }
-                   )) +
-      geom_violin(color = "purple",
-                  add = "boxplot",
-                  fill = "purple",
-                  alpha= 0.5) +
-      geom_boxplot(width = 0.1,
-                   fill = "grey",
-                   alpha = 1) +
+                       else if (input$db2type == "Highest 60 Min Rainfall"){
+                         y = mean_rain_60
+                       }
+                       else if (input$db2type =="Highest 120 Min Rainfall"){
+                         y = mean_rain_120
+                       }
+                       else if (input$db2type == "Minimum Temperature"){
+                         y = mean_temp_min
+                       }
+                       else if (input$db2type == "Mean Temperature"){
+                         y = mean_temp
+                       }
+                       else if (input$db2type == "Maximum Temperature'"){
+                         y = mean_temp_max
+                       }
+                   )
+                   # , text = paste("Month: ",Month,
+                   #                 "<br>Rain: ", mean_rain)
+                   ) +
+      geom_violin(
+        # color = "purple",
+        # add = "boxplot",
+        # fill = "purple",
+        # alpha = 0.5,
+        # aes(fill = "Month")
+        ) +
+      geom_boxplot(
+        width = 0.2,
+        fill = "grey",
+        alpha = 1) +
       theme(legend.position = "none") +
       xlab("") +
-      ylab(if (input$db2type == "Rainfall") {
+      ylab(if (str_detect(input$db2type,"Rainfall")) {
         "Average Rainfall ( mm )"
       } else{
         "Average temperature (\u00B0C)"

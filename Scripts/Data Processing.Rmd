@@ -11,6 +11,7 @@ packages = c(
   'dplyr',
   'tidyr',
   'tidyverse',
+  'sf',
   'stringr',
   "forcats",
   'transformr',
@@ -49,16 +50,36 @@ rainfall <- mainDF %>%
   group_by(Region,SZ,Year,Month) %>%
   summarise(mean_rain = mean(Value, na.rm = TRUE))
 
+rainfall_30 <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Highest 30 Min Rainfall")) %>%
+  group_by(Region,SZ,Year,Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
+rainfall_60 <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Highest 60 Min Rainfall")) %>%
+  group_by(Region,SZ,Year,Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
+rainfall_120 <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Highest 120 Min Rainfall")) %>%
+  group_by(Region,SZ,Year,Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
 temperature <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
   group_by(Region,SZ,Year,Month) %>%
   summarise(mean_temp = mean(Value, na.rm = TRUE))
 
-
-rainfall_30 <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+temperature_max <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Maximum Temperature")) %>%
   group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_rain = mean(Value, na.rm = TRUE))
+  summarise(mean_temp = mean(Value, na.rm = TRUE))
+
+temperature_min <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Minimum Temperature")) %>%
+  group_by(Region,SZ,Year,Month) %>%
+  summarise(mean_temp = mean(Value, na.rm = TRUE))
+
 
 masterDF <- rainfall %>%
   mutate(Month = fct_relevel(Month, 
@@ -66,14 +87,17 @@ masterDF <- rainfall %>%
                              "Apr","May","Jun",
                              "Jul","Aug","Sep",
                              "Oct","Nov","Dec"))
+masterDF$mean_rain_30 = rainfall_30$mean_rain
+masterDF$mean_rain_60 = rainfall_60$mean_rain
+masterDF$mean_rain_120 = rainfall_120$mean_rain
 masterDF$mean_temp = temperature$mean_temp
+masterDF$mean_temp_max = temperature_max$mean_temp
+masterDF$mean_temp_min = temperature_min$mean_temp
 masterDF <- masterDF %>%
-  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) %>%
-  na.omit()
+  mutate_at(vars(mean_temp,mean_rain, mean_temp_max, mean_temp_min,mean_rain_30, mean_rain_60, mean_rain_120), funs(round(., 1)))
 
 saveRDS(masterDF, file = "shiny data/masterDF.RDS")
 ```
-
 
 Used by Choropleth Map
 ```{r}
@@ -190,9 +214,6 @@ dat$yearmonth <- as.yearmon(dat$date)
 dat$yearmonthf <- factor(dat$yearmonth)
 dat$week <- as.numeric(format(dat$date, "%W"))
 dat <- ddply(dat, .(yearmonthf), transform, monthweek = 1 + week - min(week))
-
-smooth_vals = predict(loess(Value ~ Year, dat))
-dat$smooth_vals <- smooth_vals
 
 saveRDS(dat, file = "shiny data/dat.RDS")
 ```
