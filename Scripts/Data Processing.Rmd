@@ -1,0 +1,186 @@
+
+Loading library
+
+```{r}
+packages = c(
+  'plyr',
+  'dplyr',
+  'tidyr',
+  'tidyverse',
+  'sf',
+  'tmap',
+  'plotly',
+  'shiny',
+  'stringr',
+  'tmaptools',
+  'ggplot2',
+  'ggridges',
+  "htmlwidgets",
+  'leaflet',
+  "forcats",
+  "shinydashboard",
+  'waiter',
+  'highcharter',
+  'shinycssloaders',
+  'transformr',
+  'gifski',
+  'png',
+  'quantmod',
+  'reshape2',
+  'scales'
+)
+
+for (p in packages) {
+  if (!require(p, character.only = T)) {
+    install.packages(p)
+  }
+  library(p, character.only = T)
+}
+
+```
+
+
+```{r}
+
+#------------- Inital Files ------------------
+mpsz <- st_read(dsn = "geospatial",
+                layer = "MP14_SUBZONE_WEB_PL")
+mainDF <- read.csv("merged data/dataset.csv")
+mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
+
+saveRDS(mainDF, file = "shiny data/mainDF.RDS")
+
+#-------------- Non Maps -----------------------
+rainfall <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Region,SZ,Year,Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
+temperature <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  group_by(Region,SZ,Year,Month) %>%
+  summarise(mean_temp = mean(Value, na.rm = TRUE))
+
+
+masterDF <- rainfall %>%
+  mutate(Month = fct_relevel(Month, 
+                             "Jan","Feb","Mar",
+                             "Apr","May","Jun",
+                             "Jul","Aug","Sep",
+                             "Oct","Nov","Dec"))
+masterDF$mean_temp = temperature$mean_temp
+masterDF <- masterDF %>%
+  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) %>%
+  na.omit()
+
+saveRDS(masterDF, file = "shiny data/masterDF.RDS")
+
+#-------------- Maps----------------
+rainfall <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Year,SZ, Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
+temperature <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  group_by(Year,SZ, Month) %>%
+  summarise(mean_temp = mean(Value, na.rm = TRUE))
+
+masterDF2 <- rainfall %>%
+  mutate(Month = fct_relevel(Month, 
+                             "Jan","Feb","Mar",
+                             "Apr","May","Jun",
+                             "Jul","Aug","Sep",
+                             "Oct","Nov","Dec"))
+masterDF2$mean_temp = temperature$mean_temp
+masterDF2<- masterDF2 %>%
+  mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
+
+saveRDS(masterDF2, file = "shiny data/masterDF2.RDS")
+#--------------Weathers trends------------
+Mastertemp <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+  group_by(Year, Month) %>%
+  summarise(median = median(Value, na.rm = TRUE),
+            lower = min(Value, na.rm = TRUE),
+            upper = max(Value, na.rm = TRUE),
+            avg = mean(Value, na.rm =TRUE)) %>%
+  na.omit()
+Mastertemp$date = as.Date(with(Mastertemp, paste(Year,month.abb[Month], "01", sep=" ")), "%Y %b %d")
+smooth_vals <- predict(loess(median~Year,Mastertemp))
+Mastertemp$smooth_vals <- smooth_vals
+
+Mastertemp <- Mastertemp %>%
+  mutate_at(c(3:6,8), funs(round(., 1))) 
+
+saveRDS(Mastertemp, file = "shiny data/Mastertemp.RDS")
+#--------------Weathers Radials------------
+Mastertemp2 <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Temperature")) %>%
+  select(Region,Year, date, Value) %>%
+  group_by(Year,Region,date) %>%
+  summarise(min_temperaturec = min(Value, na.rm = TRUE),
+            max_temperaturec = max(Value, na.rm = TRUE),
+            mean_temperaturec = mean(Value, na.rm = TRUE),
+            median_temperaturec = median(Value, na.rm = TRUE)) %>%
+  na.omit()
+
+smooth_vals <- predict(loess(median_temperaturec ~Year,Mastertemp2))
+Mastertemp2$smooth_vals <- smooth_vals
+
+Mastertemp2 <- Mastertemp2 %>%
+  mutate_at(4:8, funs(round(., 1)))
+
+saveRDS(Mastertemp2, file = "shiny data/Mastertemp2.RDS")
+
+#-------------- Calendar Heatmap ----------------
+dat <- mainDF %>%
+  select(Year, Month, Day, Measurement, Value) %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature|Daily Rainfall Total")) %>%
+  filter(!is.na(Value))
+
+dat$date <- as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
+
+dat$Year <- as.numeric(as.POSIXlt(dat$date)$year + 1900)
+dat$Month <- as.numeric(as.POSIXlt(dat$date)$mon + 1)
+dat$monthf <-
+  factor(
+    dat$Month,
+    levels = as.character(1:12),
+    labels = c(
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ),
+    ordered = TRUE
+  )
+dat$weekday = as.POSIXlt(dat$date)$wday
+dat$weekdayf <-
+  factor(
+    dat$weekday,
+    levels = rev(0:6),
+    labels = rev(c(
+      "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+    )),
+    ordered = TRUE
+  )
+dat$yearmonth <- as.yearmon(dat$date)
+dat$yearmonthf <- factor(dat$yearmonth)
+dat$week <- as.numeric(format(dat$date, "%W"))
+dat <- ddply(dat, .(yearmonthf), transform, monthweek = 1 + week - min(week))
+
+smooth_vals = predict(loess(Value ~ Year, dat))
+dat$smooth_vals <- smooth_vals
+
+saveRDS(dat, file = "shiny data/dat.RDS")
+```
+
