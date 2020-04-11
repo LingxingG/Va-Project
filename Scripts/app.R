@@ -207,121 +207,71 @@ mpsz <- st_read(dsn = "geospatial",
 # mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
 mainDF <- readRDS("shiny data/mainDF.RDS")
 #-------------- Non Maps ------------
-# rainfall <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_rain = mean(Value, na.rm = TRUE))
-# 
-# rainfall_30 <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Highest 30 Min Rainfall")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_rain = mean(Value, na.rm = TRUE))
-# 
-# rainfall_60 <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Highest 60 Min Rainfall")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_rain = mean(Value, na.rm = TRUE))
-# 
-# rainfall_120 <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Highest 120 Min Rainfall")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_rain = mean(Value, na.rm = TRUE))
-# 
-# temperature <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_temp = mean(Value, na.rm = TRUE))
-# 
-# temperature_max <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Maximum Temperature")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_temp = mean(Value, na.rm = TRUE))
-# 
-# temperature_min <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Minimum Temperature")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_temp = mean(Value, na.rm = TRUE))
-# 
-# wind_mean <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Mean Wind Speed")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_wind = mean(Value, na.rm = TRUE))
-# 
-# wind_max <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Max Wind Speed")) %>%
-#   group_by(Region,SZ,Year,Month) %>%
-#   summarise(mean_wind = mean(Value, na.rm = TRUE))
-# 
-# 
-# masterDF <- rainfall %>%
-#   mutate(Month = fct_relevel(Month, 
-#                              "Jan","Feb","Mar",
-#                              "Apr","May","Jun",
-#                              "Jul","Aug","Sep",
-#                              "Oct","Nov","Dec"))
-# masterDF$mean_rain_30 = rainfall_30$mean_rain
-# masterDF$mean_rain_60 = rainfall_60$mean_rain
-# masterDF$mean_rain_120 = rainfall_120$mean_rain
-# masterDF$mean_temp = temperature$mean_temp
-# masterDF$mean_temp_max = temperature_max$mean_temp
-# masterDF$mean_temp_min = temperature_min$mean_temp
-# masterDF$mean_wind = wind_mean$mean_wind
-# masterDF$max_wind = wind_max$mean_wind
-# 
-# masterDF <- masterDF %>%
-#   mutate_at(
-#     vars(
-#       mean_temp,
-#       mean_rain,
-#       mean_temp_max,
-#       mean_temp_min,
-#       mean_rain_30,
-#       mean_rain_60,
-#       mean_rain_120,
-#       mean_wind,
-#       max_wind
-#     ),
-#     funs(round(., 1))
+# tm <- mainDF %>%
+#   mutate(
+#     Month = fct_relevel(
+#       Month,
+#       "Jan",
+#       "Feb",
+#       "Mar",
+#       "Apr",
+#       "May",
+#       "Jun",
+#       "Jul",
+#       "Aug",
+#       "Sep",
+#       "Oct",
+#       "Nov",
+#       "Dec"
+#     )
 #   )
+# masterDF <- tm %>%
+#   filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
+#   group_by(Year, Month, Region, SZ) %>%
+#   summarise(mean_rain = mean(Value, na.rm = TRUE))
+# tm_tmp <- tm %>%
+#   filter(str_detect(tm$Measurement, "Mean Temperature")) %>%
+#   group_by(Year, Month, Region, SZ) %>%
+#   summarise(mean_temp = mean(Value, na.rm = TRUE))
+# masterDF$mean_temp = tm_tmp$mean_temp
+# masterDF <- masterDF %>%
+#   mutate_at(vars(mean_temp,
+#                  mean_rain, ),
+#             funs(round(., 1)))
 
 masterDF <- readRDS("shiny data/masterDF.RDS")
 #-------------- Maps----------------
-# rainfall <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-#   group_by(Year,SZ, Month) %>%
+# masterDF2  <- tm %>%
+#   filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
+#   group_by(Year, Month, SZ) %>%
 #   summarise(mean_rain = mean(Value, na.rm = TRUE))
-# 
-# temperature <- mainDF %>%
-#   filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-#   group_by(Year,SZ, Month) %>%
+# df2Temp <- tm %>%
+#   filter(str_detect(tm$Measurement, "Mean Temperature")) %>%
+#   group_by(Year, Month, SZ) %>%
 #   summarise(mean_temp = mean(Value, na.rm = TRUE))
-# 
-# masterDF2 <- rainfall %>%
-#   mutate(Month = fct_relevel(Month, 
-#                              "Jan","Feb","Mar",
-#                              "Apr","May","Jun",
-#                              "Jul","Aug","Sep",
-#                              "Oct","Nov","Dec"))
-# masterDF2$mean_temp = temperature$mean_temp
-# masterDF2<- masterDF2 %>%
-#   mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
+# masterDF2$mean_temp = df2Temp$mean_temp
+# masterDF2 <- masterDF2 %>%
+#   mutate_at(vars(mean_temp, mean_rain), funs(round(., 1)))
+
 masterDF2 <- readRDS("shiny data/masterDF2.RDS")
 
 #--------------Weathers trends------------
 # Mastertemp <- mainDF %>%
 #   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
 #   group_by(Year, Month) %>%
-#   summarise(median = median(Value, na.rm = TRUE),
-#             lower = min(Value, na.rm = TRUE),
-#             upper = max(Value, na.rm = TRUE),
-#             avg = mean(Value, na.rm =TRUE)) %>%
+#   summarise(
+#     median = median(Value, na.rm = TRUE),
+#     lower = min(Value, na.rm = TRUE),
+#     upper = max(Value, na.rm = TRUE),
+#     avg = mean(Value, na.rm = TRUE)
+#   ) %>%
 #   na.omit()
-# Mastertemp$date = as.Date(with(Mastertemp, paste(Year,month.abb[Month], "01", sep=" ")), "%Y %b %d")
-# smooth_vals <- predict(loess(median~Year,Mastertemp))
+# Mastertemp$date <-
+#   as.Date(with(Mastertemp, paste(Year, Month, "01", sep = "-")), "%Y-%b-%d")
+# smooth_vals <- predict(loess(median ~ Year, Mastertemp))
 # Mastertemp$smooth_vals <- smooth_vals
-# 
 # Mastertemp <- Mastertemp %>%
-#   mutate_at(c(3:6,8), funs(round(., 1)))
+#   mutate_at(c(3:6, 8), funs(round(., 1))) 
 Mastertemp <- readRDS("shiny data/Mastertemp.RDS")
 
 Year_min <- min(Mastertemp[, "Year"], na.rm = TRUE)
@@ -330,17 +280,17 @@ Year_max <- max(Mastertemp[, "Year"], na.rm = TRUE)
 #--------------Weathers Radials------------
 # Mastertemp2 <- mainDF %>%
 #   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
-#   select(Region,Year, date, Value) %>%
-#   group_by(Year,Region,date) %>%
-#   summarise(min_temperaturec = min(Value, na.rm = TRUE),
-#             max_temperaturec = max(Value, na.rm = TRUE),
-#             mean_temperaturec = mean(Value, na.rm = TRUE),
-#             median_temperaturec = median(Value, na.rm = TRUE)) %>%
+#   select(Region, Year, date, Value) %>%
+#   group_by(Year, date, Region) %>%
+#   summarise(
+#     min_temperaturec = min(Value, na.rm = TRUE),
+#     max_temperaturec = max(Value, na.rm = TRUE),
+#     mean_temperaturec = mean(Value, na.rm = TRUE),
+#     median_temperaturec = median(Value, na.rm = TRUE)
+#   ) %>%
 #   na.omit()
-# 
-# smooth_vals <- predict(loess(median_temperaturec ~Year,Mastertemp2))
+# smooth_vals <- predict(loess(median_temperaturec ~ Year, Mastertemp2))
 # Mastertemp2$smooth_vals <- smooth_vals
-# 
 # Mastertemp2 <- Mastertemp2 %>%
 #   mutate_at(4:8, funs(round(., 1)))
 
@@ -350,9 +300,7 @@ Mastertemp2 <- readRDS("shiny data/Mastertemp2.RDS")
 #   select(Year, Month, Day, Measurement, Value) %>%
 #   filter(str_detect(mainDF$Measurement, "Mean Temperature|Daily Rainfall Total")) %>%
 #   filter(!is.na(Value))
-# 
 # dat$date <- as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
-# 
 # dat$Year <- as.numeric(as.POSIXlt(dat$date)$year + 1900)
 # dat$Month <- as.numeric(as.POSIXlt(dat$date)$mon + 1)
 # dat$monthf <-
