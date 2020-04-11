@@ -1,6 +1,7 @@
 ####################### 1. define Package to install #######################
 library(rsconnect)
 library(shiny)
+library(plyr)
 library(dplyr)
 library(tidyverse)
 library(sf)
@@ -23,7 +24,6 @@ library(png)
 library(quantmod)
 library(reshape2)
 library(scales)
-library(plyr)
 # packages = c(
 #   'plyr'
 #   'dplyr',
@@ -256,7 +256,7 @@ ui <- dashboardPage(header, sidebar, body)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.3 import attribute data ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
-mainDF <- read.csv("merged data\\dataset.csv")
+mainDF <- read.csv("merged data/dataset.csv")
 mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
 
 #-------------- Non Maps ------------
@@ -281,7 +281,7 @@ masterDF <- masterDF %>%
   mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) %>%
   na.omit()
 
-#-------------- maps----------------
+#-------------- Maps----------------
 rainfall <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
   group_by(Year,SZ, Month) %>%
