@@ -650,7 +650,6 @@ server <- function(input, output, session) {
       filter(str_detect(mainDF$Measurement,input$db2type)) %>%
       na.omit() %>%
       distinct(Year)
-    
   
     sliderInput(
       inputId = "YearTanny1",
