@@ -84,17 +84,28 @@ sidebar <- dashboardSidebar(
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.1 define dashboard body elements ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 homepage <- tabItem(tabName = "homepage",
-                    fluidPage(fluidRow(
-                      HTML('<center><img src="Rain_Shine.png" width="300"></center>')
-                      
-                    )),
-                    fluidRow(
-                        column(12, h2("Problem and Motivation")),
-                        column(12, h5("The current reporting of Singapore's climate has always been primitive and thus it is challenging for viewers to obtain in-depth insights. In 2019, multiple news companies reported that Singapore is heating up twice as fast as the rest of the world. When combined with the island's constant high humidity, it could be life-threatening. Professor Matthias Roth of the department of geography at the National University of Singapore (NUS) attributed the rising temperatures to global warming and the Urban Heat Island (UHI) effect. However, there was no data given to back up their claims on Singapore's climate change.")),
-                    ),
-                    fluidRow(column(12, h5(
-                    "Our team aims to present Singapore's climate data in more user-friendly and meaningful interpretation ways. Through Rain&Shine, an interactive and user-friendly visualization dashboard, that shows the distribution of the climate by Subzone, Region, and Singapore as a whole, we hope to provide Singaporeans with knowledge and in-depth insights into Singapore's Climate. Additionally, we want to identify the trends inherent within the weather data available and answer questions regarding the changes in Singapore's climate from available historical data.")
-                    )))
+                    fluidPage(
+                      fluidRow(
+                        HTML('<center><img src="Rain_Shine.png" width="300"></center>')
+                        
+                      ),
+                      fluidRow(column(12, h2(
+                        "Problem and Motivation"
+                      )),
+                      column(
+                        12,
+                        h5(
+                          "The current reporting of Singapore's climate has always been primitive and thus it is challenging for viewers to obtain in-depth insights. In 2019, multiple news companies reported that Singapore is heating up twice as fast as the rest of the world. When combined with the island's constant high humidity, it could be life-threatening. Professor Matthias Roth of the department of geography at the National University of Singapore (NUS) attributed the rising temperatures to global warming and the Urban Heat Island (UHI) effect. However, there was no data given to back up their claims on Singapore's climate change."
+                        )
+                      ), ),
+                      fluidRow(column(
+                        12,
+                        h5(
+                          "Our team aims to present Singapore's climate data in more user-friendly and meaningful interpretation ways. Through Rain&Shine, an interactive and user-friendly visualization dashboard, that shows the distribution of the climate by Subzone, Region, and Singapore as a whole, we hope to provide Singaporeans with knowledge and in-depth insights into Singapore's Climate. Additionally, we want to identify the trends inherent within the weather data available and answer questions regarding the changes in Singapore's climate from available historical data."
+                        )
+                      )),
+                      fluidRow(column(12, h6("Data Source: NEA")))
+                    ))
 dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
@@ -640,12 +651,13 @@ server <- function(input, output, session) {
       na.omit() %>%
       distinct(Year)
     
+  
     sliderInput(
       inputId = "YearTanny1",
       label = "Year:",
-      min =  min(t1_year$Year, na.rm = TRUE),
+      min = if(str_detect(input$db2type, "Temperature")){2009}else{min(t1_year$Year, na.rm = TRUE)},
       max = max(t1_year$Year, na.rm = TRUE),
-      value = min(t1_year$Year, na.rm = TRUE),
+      value = if(str_detect(input$db2type, "Temperature")){2009}else{min(t1_year$Year, na.rm = TRUE)},
       step = 1,
       sep = "",
       animate = animationOptions(interval = 5000, loop = FALSE)
@@ -661,14 +673,15 @@ server <- function(input, output, session) {
                                  "Jul","Aug","Sep",
                                  "Oct","Nov","Dec")) %>%
       filter(str_detect(Measurement,input$db2type)) %>%
+      filter(Year == as.numeric(input$YearTanny1)) %>%
       group_by(Year, Month, Region, SZ) %>%
       summarise(mean_valuedb2 = mean(Value, na.rm = TRUE)) %>%
-      filter(Year == as.numeric(input$YearTanny1))
+      na.omit()
   })
   
   output$tanny1 <- renderPlotly({
     rain <- ggplot(db2DF(),
-                   aes(x = factor(Month),
+                   aes(x = Month,
                        y = mean_valuedb2
                        # text = paste("Month: ",Month,
                        #             "<br>Value: ", mean_valuedb2,
