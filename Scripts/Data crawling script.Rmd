@@ -13,15 +13,13 @@ The purpose of this file is to: \
 
 ```{r echo = TRUE,eval=FALSE}
 packages <-
-  c(
-    'tidyverse',
-  'data.table',
-  'sf',
-  'tidyr',
-  'stringr',
-  'lubridate',
-  'dplyr'
-  )
+  c('tidyverse',
+    'data.table',
+    'sf',
+    'tidyr',
+    'stringr',
+    'lubridate',
+    'dplyr')
 
 for (p in packages) {
   if (!require(p, character.only = T)) {
