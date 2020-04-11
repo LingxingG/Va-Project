@@ -58,7 +58,7 @@ sidebar <- dashboardSidebar(
       icon = icon("dashboard")
     ),
     menuItem(
-      "Ridge Plot",
+      "Ridgeline Plot",
       tabName = "dashboard3",
       icon = icon("dashboard")
     ),
@@ -100,14 +100,14 @@ dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         fluidRow(
-                        titlePanel("Map Plot"),
+                        titlePanel("Birdeye view of Mean Rainfall and Mean Temperature Using Singapore Map"),
                         sidebarLayout(
                           sidebarPanel(fluidRow(uiOutput("sYear")),
                                      fluidRow(uiOutput("sMonth")),
                                      width = 2),
                         mainPanel(fluidRow(
-                          column(6, leafletOutput("lxmap")),
-                          column(6, leafletOutput("lxmap2"))
+                          column(5, leafletOutput("lxmap")),
+                          column(5, leafletOutput("lxmap2"))
                         ), width = 10))
                       )))
 
@@ -115,12 +115,12 @@ dashboard2 <- tabItem(tabName = "dashboard2",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         fluidRow(
-                          titlePanel("Violin Plot"),
+                          titlePanel("Distribution of the Measurements and Probability Density"),
                           sidebarLayout(
                             sidebarPanel(fluidRow(uiOutput('tMeasure')),
-                                         fluidRow(uiOutput("tYear1"), width = 2)),
+                                         fluidRow(uiOutput("tYear1")), width = 2),
                             mainPanel(fluidRow(withSpinner(
-                              plotlyOutput("tanny1", width = "80%", height = "400px")
+                              plotlyOutput("tanny1", width = "95%" ,height = "400px")
                             )), width = 10)
                           )
                         )
@@ -131,7 +131,7 @@ dashboard3 <- tabItem(tabName = "dashboard3",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         fluidRow(
-                          titlePanel("Ridge Plot"),
+                          titlePanel("Joyplot to Visualize the Changes in Distribution Over the Years"),
                           sidebarLayout(
                             sidebarPanel(fluidRow(uiOutput("tYear3")), width = 2),
                             mainPanel(fluidRow(
@@ -150,11 +150,11 @@ dashboard4 <- tabItem(tabName = "dashboard4",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         fluidRow(
-                          titlePanel("Correlation Plot"),
+                          titlePanel("Correlation Plot to Understand the Relationship in Singapore's Climate"),
                           sidebarLayout(
                             sidebarPanel(fluidRow(uiOutput("tYear")), width = 2),
                             mainPanel(fluidRow(withSpinner(
-                              plotlyOutput("tanny4")
+                              plotlyOutput("tanny4", width = "95%")
                             )), width = 10)
                           )
                         )
@@ -170,7 +170,7 @@ dashboard5 <- tabItem(tabName = "dashboard5",
                                          fluidRow(uiOutput('hcRegion')),
                                          width = 2),
                             mainPanel(fluidRow(withSpinner(
-                              highchartOutput("hc", width = "100%", height = "550px")
+                              highchartOutput("hc", width = "95%", height = "550px")
                             )), width = 10)
                           )
                         )
@@ -181,7 +181,7 @@ dashboard6 <- tabItem(tabName = "dashboard6",
                         tags$style(type = "text/css", css),
                         titlePanel("Singapore Temperature Change (1982-2019)"),
                         fluidRow(withSpinner(
-                          highchartOutput("hc2", width = "80%", height = "550px")
+                          highchartOutput("hc2", height = "550px")
                         ))
                       ))
 
