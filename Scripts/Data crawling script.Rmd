@@ -8,7 +8,7 @@ The purpose of this file is to: \
 2. combine all csv into one single DF
 3. remove all speical characters ("-") to null values
 4. Join area code to the main DF for every area
-5. create subzone columns by mapping lat and lng columns with MLP shape into our data DF.
+5. create subzone columns our data DF, by mapping lat and lng columns with MLP shape into
 5. output one single csv file 
 
 ```{r echo = TRUE,eval=FALSE}

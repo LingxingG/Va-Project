@@ -32,69 +32,43 @@ for (p in packages) {
 
 ```
 
+Used by Voilin Plot for mainDF
 ```{r}
 #------------- Inital Files ------------------
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
-mainDF <- read.csv("merged data/dataset.csv")
+mainDF <- read_csv("merged data/dataset.csv")
 mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
 
 saveRDS(mainDF, file = "shiny data/mainDF.RDS")
 ```
 
-Used by Correlation Plot, Ridge Plot, Voilin Plot
+Used by Correlation Plot, Ridge Plot
 ```{r}
 #-------------- Non Maps -----------------------
-rainfall <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_rain = mean(Value, na.rm = TRUE))
-
-rainfall_30 <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Highest 30 Min Rainfall")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_rain = mean(Value, na.rm = TRUE))
-
-rainfall_60 <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Highest 60 Min Rainfall")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_rain = mean(Value, na.rm = TRUE))
-
-rainfall_120 <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Highest 120 Min Rainfall")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_rain = mean(Value, na.rm = TRUE))
-
-temperature <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_temp = mean(Value, na.rm = TRUE))
-
-temperature_max <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Maximum Temperature")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_temp = mean(Value, na.rm = TRUE))
-
-temperature_min <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Minimum Temperature")) %>%
-  group_by(Region,SZ,Year,Month) %>%
-  summarise(mean_temp = mean(Value, na.rm = TRUE))
-
-
-masterDF <- rainfall %>%
-  mutate(Month = fct_relevel(Month, 
+tm <- mainDF %>%
+    mutate(Month = fct_relevel(Month,
                              "Jan","Feb","Mar",
                              "Apr","May","Jun",
                              "Jul","Aug","Sep",
                              "Oct","Nov","Dec"))
-masterDF$mean_rain_30 = rainfall_30$mean_rain
-masterDF$mean_rain_60 = rainfall_60$mean_rain
-masterDF$mean_rain_120 = rainfall_120$mean_rain
-masterDF$mean_temp = temperature$mean_temp
-masterDF$mean_temp_max = temperature_max$mean_temp
-masterDF$mean_temp_min = temperature_min$mean_temp
+
+masterDF <- tm %>%
+  filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Year,Month,Region,SZ) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
+tm_tmp <- tm %>%
+  filter(str_detect(tm$Measurement, "Mean Temperature")) %>%
+  group_by(Year,Month,Region,SZ) %>%
+  summarise(mean_temp = mean(Value, na.rm = TRUE))
+
+masterDF$mean_temp = tm_tmp$mean_temp
+
 masterDF <- masterDF %>%
-  mutate_at(vars(mean_temp,mean_rain, mean_temp_max, mean_temp_min,mean_rain_30, mean_rain_60, mean_rain_120), funs(round(., 1)))
+  mutate_at(vars(mean_temp,
+                 mean_rain,),
+            funs(round(., 1)))
 
 saveRDS(masterDF, file = "shiny data/masterDF.RDS")
 ```
@@ -102,23 +76,17 @@ saveRDS(masterDF, file = "shiny data/masterDF.RDS")
 Used by Choropleth Map
 ```{r}
 #-------------- Maps----------------
-rainfall <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
-  group_by(Year,SZ, Month) %>%
+masterDF2  <- tm %>%
+  filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Year,Month,SZ) %>%
   summarise(mean_rain = mean(Value, na.rm = TRUE))
 
-temperature <- mainDF %>%
-  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
-  group_by(Year,SZ, Month) %>%
+df2Temp <- tm %>%
+  filter(str_detect(tm$Measurement, "Mean Temperature")) %>%
+  group_by(Year,Month,SZ) %>%
   summarise(mean_temp = mean(Value, na.rm = TRUE))
 
-masterDF2 <- rainfall %>%
-  mutate(Month = fct_relevel(Month, 
-                             "Jan","Feb","Mar",
-                             "Apr","May","Jun",
-                             "Jul","Aug","Sep",
-                             "Oct","Nov","Dec"))
-masterDF2$mean_temp = temperature$mean_temp
+masterDF2$mean_temp = df2Temp$mean_temp
 masterDF2<- masterDF2 %>%
   mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
 
@@ -136,7 +104,8 @@ Mastertemp <- mainDF %>%
             upper = max(Value, na.rm = TRUE),
             avg = mean(Value, na.rm =TRUE)) %>%
   na.omit()
-Mastertemp$date = as.Date(with(Mastertemp, paste(Year,month.abb[Month], "01", sep=" ")), "%Y %b %d")
+Mastertemp$date <- as.Date(with(Mastertemp, paste(Year,Month, "01", sep="-")), "%Y-%b-%d")
+
 smooth_vals <- predict(loess(median~Year,Mastertemp))
 Mastertemp$smooth_vals <- smooth_vals
 
@@ -152,7 +121,7 @@ Used by Temperature Radials
 Mastertemp2 <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
   select(Region,Year, date, Value) %>%
-  group_by(Year,Region,date) %>%
+  group_by(Year,date,Region) %>%
   summarise(min_temperaturec = min(Value, na.rm = TRUE),
             max_temperaturec = max(Value, na.rm = TRUE),
             mean_temperaturec = mean(Value, na.rm = TRUE),
@@ -241,4 +210,7 @@ anim <- ggplot(test2,aes(date,Value))+
 
 anim_save("temperature_trend.gif",animate(anim,renderer = gifski_renderer()))
 ```
+
+
+
 
