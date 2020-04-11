@@ -1,29 +1,21 @@
+---
+output: html_document
+editor_options: 
+chunk_output_type: inline
+---
 
 Loading library
-
 ```{r}
 packages = c(
   'plyr',
   'dplyr',
   'tidyr',
   'tidyverse',
-  'sf',
-  'tmap',
-  'plotly',
-  'shiny',
   'stringr',
-  'tmaptools',
-  'ggplot2',
-  'ggridges',
-  "htmlwidgets",
-  'leaflet',
   "forcats",
-  "shinydashboard",
-  'waiter',
-  'highcharter',
-  'shinycssloaders',
   'transformr',
   'gifski',
+  'zoo',
   'png',
   'quantmod',
   'reshape2',
@@ -39,9 +31,7 @@ for (p in packages) {
 
 ```
 
-
 ```{r}
-
 #------------- Inital Files ------------------
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
@@ -49,7 +39,10 @@ mainDF <- read.csv("merged data/dataset.csv")
 mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
 
 saveRDS(mainDF, file = "shiny data/mainDF.RDS")
+```
 
+Used by Correlation Plot, Ridge Plot, Voilin Plot
+```{r}
 #-------------- Non Maps -----------------------
 rainfall <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
@@ -61,6 +54,11 @@ temperature <- mainDF %>%
   group_by(Region,SZ,Year,Month) %>%
   summarise(mean_temp = mean(Value, na.rm = TRUE))
 
+
+rainfall_30 <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Region,SZ,Year,Month) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
 
 masterDF <- rainfall %>%
   mutate(Month = fct_relevel(Month, 
@@ -74,7 +72,11 @@ masterDF <- masterDF %>%
   na.omit()
 
 saveRDS(masterDF, file = "shiny data/masterDF.RDS")
+```
 
+
+Used by Choropleth Map
+```{r}
 #-------------- Maps----------------
 rainfall <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Daily Rainfall Total")) %>%
@@ -97,7 +99,11 @@ masterDF2<- masterDF2 %>%
   mutate_at(vars(mean_temp,mean_rain), funs(round(., 1))) 
 
 saveRDS(masterDF2, file = "shiny data/masterDF2.RDS")
-#--------------Weathers trends------------
+```
+
+Used by Temperature Trends
+```{r}
+#-------------- Temperature trends------------
 Mastertemp <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
   group_by(Year, Month) %>%
@@ -114,6 +120,10 @@ Mastertemp <- Mastertemp %>%
   mutate_at(c(3:6,8), funs(round(., 1))) 
 
 saveRDS(Mastertemp, file = "shiny data/Mastertemp.RDS")
+```
+
+Used by Temperature Radials
+```{r}
 #--------------Weathers Radials------------
 Mastertemp2 <- mainDF %>%
   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
@@ -132,7 +142,10 @@ Mastertemp2 <- Mastertemp2 %>%
   mutate_at(4:8, funs(round(., 1)))
 
 saveRDS(Mastertemp2, file = "shiny data/Mastertemp2.RDS")
+```
 
+Clendar Heatmap
+```{r}
 #-------------- Calendar Heatmap ----------------
 dat <- mainDF %>%
   select(Year, Month, Day, Measurement, Value) %>%
@@ -182,5 +195,29 @@ smooth_vals = predict(loess(Value ~ Year, dat))
 dat$smooth_vals <- smooth_vals
 
 saveRDS(dat, file = "shiny data/dat.RDS")
+```
+
+Gift Creation
+```{r}
+test2 <- mainDF %>% 
+  filter(Measurement == "Mean Temperature (Â°C)") %>% 
+  filter(!is.na(Value))
+
+smooth_vals = predict(loess(Value~Year,test2))
+test2$date <- as.Date(test2$date)
+test2$smooth_vals <- smooth_vals
+#https://stackoverflow.com/questions/60856938/animate-points-and-regression-line-along-date-with-gganimate
+anim <- ggplot(test2,aes(date,Value))+
+  geom_line(color="red") +
+  geom_line(aes(y = smooth_vals), colour = "blue")+
+  labs(
+    title = "Temperature accross Singapore",
+    x="Year",
+    y="Temperature (\u00B0C)"
+    )+
+  transition_reveal(date) + 
+  ease_aes("linear")
+
+anim_save("temperature_trend.gif",animate(anim,renderer = gifski_renderer()))
 ```
 
