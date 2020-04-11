@@ -318,7 +318,6 @@ Mastertemp$smooth_vals <- smooth_vals
 Mastertemp <- Mastertemp %>%
   mutate_at(c(3:6,8), funs(round(., 1))) 
 
-
 Year_min <- min(Mastertemp[, "Year"], na.rm = TRUE)
 Year_max <- max(Mastertemp[, "Year"], na.rm = TRUE)
 
@@ -342,7 +341,7 @@ Mastertemp2 <- Mastertemp2 %>%
 #-------------- Calendar Heatmap ----------------
 dat <- mainDF %>%
   select(Year, Month, Day, Measurement, Value) %>%
-  filter(str_detect(mainDF$Measurement, "Mean Temperature")) %>%
+  filter(str_detect(mainDF$Measurement, "Mean Temperature|Daily Rainfall Total")) %>%
   filter(!is.na(Value))
 
 dat$date <- as.Date(with(dat, paste(Year, Month, Day, sep = "-")), "%Y-%b-%d")
