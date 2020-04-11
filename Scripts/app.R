@@ -112,68 +112,51 @@ dashboard1 <- tabItem(tabName = "dashboard1",
                       )))
 
 dashboard2 <- tabItem(tabName = "dashboard2",
-                      fluidPage(
+                      withSpinner(fluidPage(
                         tags$style(type = "text/css", css),
+                        titlePanel("Distribution of the Measurements and Probability Density"),
                         fluidRow(
-                          titlePanel("Distribution of the Measurements and Probability Density"),
-                          sidebarLayout(
-                            sidebarPanel(fluidRow(uiOutput('tMeasure')),
-                                         fluidRow(uiOutput("tYear1")), width = 2),
-                            mainPanel(fluidRow(withSpinner(
-                              plotlyOutput("tanny1", width = "95%" ,height = "400px")
-                            )), width = 10)
-                          )
-                        )
-                      ))
-
+                          column(5, uiOutput('tMeasure')),
+                          column(5, uiOutput("tYear1"))),
+                        fluidRow(withSpinner(plotlyOutput(
+                          "tanny1", width = "80%", height = "400px"
+                        )))
+                      )))
 
 dashboard3 <- tabItem(tabName = "dashboard3",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        fluidRow(
-                          titlePanel("Joyplot to Visualize the Changes in Distribution Over the Years"),
-                          sidebarLayout(
-                            sidebarPanel(fluidRow(uiOutput("tYear3")), width = 2),
-                            mainPanel(fluidRow(
-                              column(6, plotOutput(
-                                "tanny2", width = "100%", height = "400px"
-                              )),
-                              column(6, plotOutput(
-                                "tanny3", width = "100%", height = "400px"
-                              ))
-                            ), width = 10)
-                          )
-                        )
-                      ))  
-
+                        titlePanel("Joyplot to Visualize the Changes in Distribution Over the Years"),
+                        fluidRow(uiOutput("tYear3"),
+                                 fluidRow(
+                                   column(6, plotOutput(
+                                     "tanny2", width = "100%", height = "500px"
+                                   )),
+                                   column(6, plotOutput(
+                                     "tanny3", width = "100%", height = "500px"
+                                   ))
+                                 ))
+                      ))
 dashboard4 <- tabItem(tabName = "dashboard4",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        fluidRow(
-                          titlePanel("Correlation Plot to Understand the Relationship in Singapore's Climate"),
-                          sidebarLayout(
-                            sidebarPanel(fluidRow(uiOutput("tYear")), width = 2),
-                            mainPanel(fluidRow(withSpinner(
-                              plotlyOutput("tanny4", width = "95%")
-                            )), width = 10)
-                          )
-                        )
+                        titlePanel("Understanding the Relationship of Singapore's Climate"),
+                        fluidRow(),
+                        fluidRow(uiOutput("tYear")),
+                        fluidRow(withSpinner(plotlyOutput("tanny4"))),
                       ))
 
 dashboard5 <- tabItem(tabName = "dashboard5",
                       fluidPage(
                         tags$style(type = "text/css", css),
+                        titlePanel("Temperature Radials"),
                         fluidRow(
-                          titlePanel("Temperature Radials"),
-                          sidebarLayout(
-                            sidebarPanel(fluidRow(uiOutput('hcr')),
-                                         fluidRow(uiOutput('hcRegion')),
-                                         width = 2),
-                            mainPanel(fluidRow(withSpinner(
-                              highchartOutput("hc", width = "95%", height = "550px")
-                            )), width = 10)
-                          )
-                        )
+                          column(4, uiOutput('hcr')),
+                          column(4, uiOutput('hcRegion'))),
+                        fluidRow(column(
+                          6,
+                          withSpinner( highchartOutput("hc", width = "100%", height = "400px"))
+                        ))
                       ))
 
 dashboard6 <- tabItem(tabName = "dashboard6",
@@ -189,14 +172,9 @@ dashboard7 <- tabItem(tabName = "dashboard7",
                       fluidPage(
                         tags$style(type = "text/css", css),
                         titlePanel("Heatmap Across the Years"),
-                        sidebarLayout(
-                          sidebarPanel(fluidRow(uiOutput("my_measure")),
-                                       fluidRow(uiOutput("my_calendar")), width =
-                                         2),
-                          mainPanel(fluidRow(withSpinner(plotOutput(
-                            "my1"
-                          )), width = 10))
-                        )
+                        fluidRow(column(4, uiOutput("my_measure")),
+                                 column(4, uiOutput("my_calendar"))),
+                        fluidRow(withSpinner(plotOutput("my1")))
                       ))
 
 dashboard8 <- tabItem(tabName = "dashboard8",
@@ -439,13 +417,14 @@ server <- function(input, output, session) {
   output$my_measure <- renderUI({
     selectInput(
       inputId = "my_measure",
-      label = "Select to view",
+      label = "Select to view:",
       choices = c('Daily Rainfall Total (mm)', "Mean Temperature (°C)")
     )
   })
   output$my1 <- renderPlot({
     if (input$my_measure == "Daily Rainfall Total (mm)") {
-      dat %>% filter(Measurement == input$my_measure) %>% 
+      dat %>% 
+        filter(str_detect(Measurement,"Rain")) %>% 
         filter(Year <= input$calendaryear[2]) %>% 
         filter(Year >= input$calendaryear[1]) %>% 
         ggplot(aes(monthweek, weekdayf, fill = Value)) +
@@ -456,7 +435,8 @@ server <- function(input, output, session) {
         xlab("Week of Month") + ylab("")
     }
     else {
-      dat %>% filter(Measurement == "Mean Temperature (Â°C)") %>% 
+      dat %>% 
+        filter(str_detect(Measurement,"Mean Temperature")) %>% 
         filter(Year <= input$calendaryear[2]) %>% 
         filter(Year >= input$calendaryear[1]) %>% 
         ggplot(aes(monthweek, weekdayf, fill = Value)) +
@@ -508,7 +488,6 @@ server <- function(input, output, session) {
   })
   
   #----------------------------------------dashboard 5 Temperature Radials ---------------------------------------
-  
   output$hcr <- renderUI({
     sliderInput(
       inputId = "hc_Year",
@@ -556,7 +535,6 @@ server <- function(input, output, session) {
       hc_legend(align = "right", verticalAlign = "top",layout = "vertical")
     
   })
-  
   #----------------------------------------dashboard 4 Correlation Plot---------------------------------------
   output$tYear <- renderUI({
     sliderInput(
@@ -567,8 +545,7 @@ server <- function(input, output, session) {
       value = Year_min,
       step = 1,
       sep = "",
-      animate = animationOptions(interval = 5000,
-                                 loop = FALSE)
+      animate = animationOptions(interval = 5000,loop = FALSE)
     )
   })
   
@@ -646,9 +623,9 @@ server <- function(input, output, session) {
     sliderInput(
       inputId = "YearTanny3",
       label = "Year:",
-      min = 2009,
+      min = Year_min,
       max = Year_max,
-      value = 2009,
+      value = c(Year_min, Year_min + 10),
       step = 1,
       sep = "",
       animate = animationOptions(interval = 5000,
@@ -658,33 +635,38 @@ server <- function(input, output, session) {
   
   output$tanny2 <- renderPlot({
     masterDF %>%
-      filter(Year == as.numeric(input$YearTanny3)) %>%
-      ggplot(aes(x = mean_temp, y = Month, fill = stat(x))) +
+      filter(Year <= input$YearTanny3[2]) %>% 
+      filter(Year >= input$YearTanny3[1]) %>% 
+      ggplot(aes(x = mean_temp, y = factor(Year), fill = stat(x))) +
       geom_density_ridges_gradient(scale = 3,
                                    rel_min_height = 0.01,
                                    gradient_lwd = 1.) +
       scale_x_continuous(expand = c(0, 0)) +
       scale_y_discrete(expand = expansion(mult = c(0.01, 0.25))) +
       scale_fill_viridis_c(name = "Temperature (\u00B0C)", option = "B") +
-      labs(title = 'Temperatures',
-           subtitle = 'Mean temperatures (Celcius) by Month') +
+      labs(title = 'Temperature',
+           subtitle = 'Mean temperatures (Celcius) by Year',
+           x ="Mean Temperature") +
       theme_ridges(font_size = 13, grid = TRUE) +
-      theme(axis.title.y = element_blank()) + xlim(min(masterDF$mean_temp, na.rm = TRUE) - 1,
-                                                   max(masterDF$mean_temp, na.rm = TRUE) + 1)
+      theme(axis.title.y = element_blank()) + 
+      xlim(min(masterDF$mean_temp, na.rm = TRUE) - 1,
+          max(masterDF$mean_temp, na.rm = TRUE) + 1)
   })
   
   output$tanny3 <- renderPlot({
     masterDF %>%
-      filter(Year == as.numeric(input$YearTanny3)) %>%
-      ggplot(aes(x = mean_rain, y = factor(Month), fill = stat(x))) +
+      filter(Year <= input$YearTanny3[2]) %>% 
+      filter(Year >= input$YearTanny3[1]) %>% 
+      ggplot(aes(x = mean_rain, y = factor(Year), fill = stat(x))) +
       geom_density_ridges_gradient(scale = 3,
                                    rel_min_height = 0.01,
                                    gradient_lwd = 1.) +
       scale_x_continuous(expand = c(0, 0)) +
       scale_y_discrete(expand = expand_scale(mult = c(0.01, 0.25))) +
       scale_fill_viridis_c(name = "Precipitation (mm)", option = "D") +
-      labs(title = 'Rainfal',
-           subtitle = 'Mean Rainfall Precipitation (mm) by Month') +
+      labs(title = 'Rainfall',
+           subtitle = 'Mean Rainfall Precipitation (mm) by Year',
+           x ="Mean Rainll") +
       theme_ridges(font_size = 13, grid = TRUE) +
       theme(axis.title.y = element_blank())
   })
@@ -699,7 +681,7 @@ server <- function(input, output, session) {
     
     selectInput(
       inputId = "db2type",
-      label = "Please Select:",
+      label = "Select to view:",
       choices = c(mchoices),
       selected = mchoices[1]
     )
