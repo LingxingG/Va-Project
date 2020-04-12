@@ -740,23 +740,34 @@ server <- function(input, output, session) {
     )
   })
   
-  db2DF <- reactive({
-    db2DF_tmp <- mainDF %>%
-      select(Year,Month,Region,SZ,Measurement,Value) %>%
-      mutate(Month = fct_relevel(Month,
-                                 "Jan","Feb","Mar",
-                                 "Apr","May","Jun",
-                                 "Jul","Aug","Sep",
-                                 "Oct","Nov","Dec")) %>%
-      filter(str_detect(Measurement,input$db2type)) %>%
-      filter(Year == as.numeric(input$YearTanny1)) %>%
-      group_by(Year, Month,Region,SZ) %>%
-      summarise(mean_valuedb2 = mean(Value, na.rm = TRUE)) %>%
-      na.omit()
-  })
+  # db2DF <- reactive({
+  #   db2DF_tmp <- mainDF %>%
+  #     select(Year,Month,Region,SZ,Measurement,Value) %>%
+  #     mutate(Month = fct_relevel(Month,
+  #                                "Jan","Feb","Mar",
+  #                                "Apr","May","Jun",
+  #                                "Jul","Aug","Sep",
+  #                                "Oct","Nov","Dec")) %>%
+  #     filter(str_detect(Measurement,input$db2type)) %>%
+  #     filter(Year == as.numeric(input$YearTanny1)) %>%
+  #     group_by(Year, Month,Region,SZ) %>%
+  #     summarise(mean_valuedb2 = mean(Value, na.rm = TRUE)) %>%
+  #     na.omit()
+  # })
   
   output$tanny1 <- renderPlotly({
-    rain <- ggplot(db2DF(),
+    rain <- ggplot(mainDF %>%
+                     select(Year,Month,Region,SZ,Measurement,Value) %>%
+                     mutate(Month = fct_relevel(Month,
+                                                "Jan","Feb","Mar",
+                                                "Apr","May","Jun",
+                                                "Jul","Aug","Sep",
+                                                "Oct","Nov","Dec")) %>%
+                     filter(str_detect(Measurement,input$db2type)) %>%
+                     filter(Year == as.numeric(input$YearTanny1)) %>%
+                     group_by(Year, Month,Region,SZ) %>%
+                     summarise(mean_valuedb2 = mean(Value, na.rm = TRUE)) %>%
+                     na.omit(),
                    aes(x = Month,
                        y = mean_valuedb2
                        # text = paste("Month: ",Month,
