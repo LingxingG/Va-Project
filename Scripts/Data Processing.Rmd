@@ -20,7 +20,8 @@ packages = c(
   'png',
   'quantmod',
   'reshape2',
-  'scales'
+  'scales',
+  'highcharter'
 )
 
 for (p in packages) {
@@ -31,15 +32,18 @@ for (p in packages) {
 }
 
 ```
-
+Remove wind variable and update year up to 1990
 Used by Voilin Plot for mainDF
 ```{r}
 #------------- Inital Files ------------------
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
 mainDF <- read_csv("merged data/dataset.csv")
-mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d") %>%
-  filter(Year >= 1990)
+mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
+
+mainDF <- mainDF %>%
+  filter(!str_detect(mainDF$Measurement, "Wind")) %>%
+  filter(Year >= 1990) 
 
 saveRDS(mainDF, file = "shiny data/mainDF.RDS")
 ```
@@ -140,6 +144,7 @@ Mastertemp <- Mastertemp %>%
 x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
 y <-
   sprintf("{point.%s}", c("upper", "median", "lower", "smooth_vals"))
+
 tltip <- tooltip_table(x, y)
 
 median_tmp <- mainDF %>%
@@ -289,6 +294,13 @@ anim <- ggplot(test2,aes(date,Value))+
   ease_aes("linear")
 
 anim_save("temperature_trend.gif",animate(anim,renderer = gifski_renderer()))
+```
+
+```{r}
+Mastertemp2 <- readRDS("shiny data/Mastertemp2.RDS")
+
+Year_min <- min(Mastertemp2[, "Year"], na.rm = TRUE)
+Year_max <- max(Mastertemp2[, "Year"], na.rm = TRUE)
 ```
 
 

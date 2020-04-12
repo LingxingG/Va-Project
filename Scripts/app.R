@@ -218,8 +218,9 @@ ui <- dashboardPage(header, sidebar, body)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~  2.1.3 import attribute data ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
-# mainDF <- read.csv("merged data/dataset.csv")
-# mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
+# mainDF <- mainDF %>%
+#   filter(!str_detect(mainDF$Measurement, "Wind")) %>%
+#   filter(Year >= 1990) 
 mainDF <- readRDS("shiny data/mainDF.RDS")
 #-------------- Non Maps ------------
 # tm <- mainDF %>%
@@ -307,10 +308,46 @@ masterDF2 <- readRDS("shiny data/masterDF2.RDS")
 # Mastertemp$smooth_vals <- smooth_vals
 # Mastertemp <- Mastertemp %>%
 #   mutate_at(c(3:6, 8), funs(round(., 1))) 
-Mastertemp <- readRDS("shiny data/Mastertemp.RDS")
 
-Year_min <- min(Mastertemp[, "Year"], na.rm = TRUE)
-Year_max <- max(Mastertemp[, "Year"], na.rm = TRUE)
+# x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
+# y <-
+#   sprintf("{point.%s}", c("upper", "median", "lower", "smooth_vals"))
+# tltip <- tooltip_table(x, y)
+# 
+# median_tmp <- mainDF %>%
+#   filter(str_detect(mainDF$Measurement, "Temperature"))
+# 
+# med <- median(median_tmp$Value, na.rm = TRUE)
+# low <- min(median_tmp$Value, na.rm = TRUE)
+# high = max(median_tmp$Value, na.rm = TRUE)
+# 
+# trendChart <- hchart(Mastertemp,
+#                      type = "columnrange",
+#                      hcaes(
+#                        x = date,
+#                        low = lower,
+#                        high = upper,
+#                        color = smooth_vals
+#                      )) %>%
+#   hc_yAxis(
+#     tickPositions = c(low - 5, med, high + 5),
+#     gridLineColor = "#000000",
+#     labels = list(format = "{value} C", useHTML = TRUE)
+#   ) %>%
+#   hc_add_series(
+#     data = Mastertemp,
+#     type = "line",
+#     hcaes(x = date, y = smooth_vals),
+#     color = "#B71C1C"
+#   ) %>%
+#   hc_tooltip(
+#     useHTML = TRUE,
+#     headerFormat = as.character(tags$small("{point.x: %Y %b}")),
+#     pointFormat = tltip
+#   )
+
+Year_min <- min(Mastertemp2[, "Year"], na.rm = TRUE)
+Year_max <- max(Mastertemp2[, "Year"], na.rm = TRUE)
 
 #--------------Weathers Radials------------
 # Mastertemp2 <- mainDF %>%
@@ -432,42 +469,6 @@ server <- function(input, output, session) {
   })
   #----------------------------------------dashboard 6 Climate Trend ---------------------------------------
   output$hc2 <- renderHighchart({
-    # x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
-    # y <-
-    #   sprintf("{point.%s}", c("upper", "median", "lower", "smooth_vals"))
-    # tltip <- tooltip_table(x, y)
-    # 
-    # median_tmp <- mainDF %>%
-    #   filter(str_detect(mainDF$Measurement, "Temperature"))
-    # 
-    # med <- median(median_tmp$Value, na.rm = TRUE)
-    # low <- min(median_tmp$Value, na.rm = TRUE)
-    # high = max(median_tmp$Value, na.rm = TRUE)
-    # 
-    # trendChart <- hchart(Mastertemp,
-    #                      type = "columnrange",
-    #                      hcaes(
-    #                        x = date,
-    #                        low = lower,
-    #                        high = upper,
-    #                        color = smooth_vals
-    #                      )) %>%
-    #   hc_yAxis(
-    #     tickPositions = c(low - 5, med, high + 5),
-    #     gridLineColor = "#000000",
-    #     labels = list(format = "{value} C", useHTML = TRUE)
-    #   ) %>%
-    #   hc_add_series(
-    #     data = Mastertemp,
-    #     type = "line",
-    #     hcaes(x = date, y = smooth_vals),
-    #     color = "#B71C1C"
-    #   ) %>%
-    #   hc_tooltip(
-    #     useHTML = TRUE,
-    #     headerFormat = as.character(tags$small("{point.x: %Y %b}")),
-    #     pointFormat = tltip
-    #   )
     trendChart<- readRDS("shiny data/trendChart.RDS")
   })
   
@@ -709,6 +710,7 @@ server <- function(input, output, session) {
   #----------------------------------------dashboard 2 Voilin Plot  ---------------------------------------
   output$tMeasure <- renderUI({
     mchoices <- mainDF %>%
+      select(Measurement) %>%
       filter(!str_detect(mainDF$Measurement,"Wind")) %>%
       mutate(Measurement= str_replace(Measurement, " \\(.*\\)", ""))%>%
       na.omit() %>%
@@ -724,6 +726,7 @@ server <- function(input, output, session) {
 
   output$tYear1 <- renderUI({
     t1_year <- mainDF %>%
+      select(Measurement,Year) %>%
       filter(str_detect(mainDF$Measurement,input$db2type)) %>%
       na.omit() %>%
       distinct(Year)
