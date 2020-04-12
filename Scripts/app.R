@@ -105,7 +105,7 @@ homepage <- tabItem(tabName = "homepage",
                           "Our team aims to present Singapore's climate data in more user-friendly and meaningful interpretation ways. Through Rain&Shine, an interactive and user-friendly visualization dashboard, that shows the distribution of the climate by Subzone, Region, and Singapore as a whole, we hope to provide Singaporeans with knowledge and in-depth insights into Singapore's Climate. Additionally, we want to identify the trends inherent within the weather data available and answer questions regarding the changes in Singapore's climate from available historical data."
                         )
                       )),
-                      fluidRow(column(12, h6("Data Source: NEA")))
+                      fluidRow(column(12, h6("Data Source: Weather.gov")))
                     ))
 
 dashboard1 <- tabItem(tabName = "dashboard1",
