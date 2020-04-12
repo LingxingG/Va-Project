@@ -308,21 +308,3 @@ anim <- ggplot(test2,aes(date,Value))+
 anim_save("temperature_trend.gif",animate(anim,renderer = gifski_renderer()))
 ```
 
-```{r}
-tmpV <- readRDS("shiny data/tmpV.RDS")
-db9_tmp <- tmpV %>%
-      select(Year,Month,Region) 
-
-db9_tmp <- db9_tmp  %>%
-        filter(Year == as.numeric(2019))
-
-db9_tmp <- db9_tmp %>%
-        filter(Month == as.numeric(input$db9m))
-
-db9_tmp <- db9_tmp %>%
-        distinct(Region)
-```
-
-
-
-
