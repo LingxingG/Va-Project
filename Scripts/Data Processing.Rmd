@@ -43,7 +43,7 @@ mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d"
 saveRDS(mainDF, file = "shiny data/mainDF.RDS")
 ```
 
-Used by Correlation Plot, Ridge Plot
+Used by Ridge Plot
 ```{r}
 #-------------- Non Maps -----------------------
 tm <- mainDF %>%
@@ -71,6 +71,29 @@ masterDF <- masterDF %>%
             funs(round(., 1)))
 
 saveRDS(masterDF, file = "shiny data/masterDF.RDS")
+```
+
+Used by Correlation Plot
+```{r}
+masterDF3 <- tm %>%
+  filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
+  group_by(Year,Month,Region) %>%
+  summarise(mean_rain = mean(Value, na.rm = TRUE))
+
+tm_tmp2 <- tm %>%
+  filter(str_detect(tm$Measurement, "Mean Temperature")) %>%
+  group_by(Year,Month,Region) %>%
+  summarise(mean_temp = mean(Value, na.rm = TRUE))
+
+masterDF3$mean_temp = tm_tmp2$mean_temp
+
+masterDF3 <- masterDF3 %>%
+  mutate_at(vars(mean_temp,
+                 mean_rain,),
+            funs(round(., 1))) %>%
+  na.omit()
+
+saveRDS(masterDF3, file = "shiny data/masterDF3.RDS")
 ```
 
 Used by Choropleth Map
@@ -110,9 +133,46 @@ smooth_vals <- predict(loess(median~Year,Mastertemp))
 Mastertemp$smooth_vals <- smooth_vals
 
 Mastertemp <- Mastertemp %>%
-  mutate_at(c(3:6,8), funs(round(., 1))) 
+  mutate_at(c(3:6,8), funs(round(., 1)))
 
-saveRDS(Mastertemp, file = "shiny data/Mastertemp.RDS")
+
+x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
+y <-
+  sprintf("{point.%s}", c("upper", "median", "lower", "smooth_vals"))
+tltip <- tooltip_table(x, y)
+
+median_tmp <- mainDF %>%
+  filter(str_detect(mainDF$Measurement, "Temperature"))
+
+med <- median(median_tmp$Value, na.rm = TRUE)
+low <- min(median_tmp$Value, na.rm = TRUE)
+high = max(median_tmp$Value, na.rm = TRUE)
+
+trendChart <- hchart(Mastertemp,
+                     type = "columnrange",
+                     hcaes(
+                       x = date,
+                       low = lower,
+                       high = upper,
+                       color = smooth_vals
+                     )) %>%
+  hc_yAxis(
+    tickPositions = c(low - 5, med, high + 5),
+    gridLineColor = "#000000",
+    labels = list(format = "{value} C", useHTML = TRUE)
+  ) %>%
+  hc_add_series(
+    data = Mastertemp,
+    type = "line",
+    hcaes(x = date, y = smooth_vals),
+    color = "#B71C1C"
+  ) %>%
+  hc_tooltip(
+    useHTML = TRUE,
+    headerFormat = as.character(tags$small("{point.x: %Y %b}")),
+    pointFormat = tltip
+  )
+saveRDS(trendChart, file = "shiny data/trendChart.RDS")
 ```
 
 Used by Temperature Radials
@@ -135,6 +195,25 @@ Mastertemp2 <- Mastertemp2 %>%
   mutate_at(4:8, funs(round(., 1)))
 
 saveRDS(Mastertemp2, file = "shiny data/Mastertemp2.RDS")
+
+Mastertemp3 <- Mastertemp2 %>%
+  group_by(Year, date) %>%
+  summarise(
+    min_temperaturec = min(min_temperaturec, na.rm = TRUE),
+    max_temperaturec = max(max_temperaturec, na.rm = TRUE),
+    mean_temperaturec = mean(mean_temperaturec , na.rm = TRUE),
+    median_temperaturec = median(median_temperaturec, na.rm = TRUE)
+  ) %>%
+  na.omit()
+
+smooth_vals <-
+  predict(loess(median_temperaturec ~ Year, Mastertemp3))
+Mastertemp3$smooth_vals <- smooth_vals
+
+Mastertemp3 <- Mastertemp3 %>%
+  mutate_at(3:7, funs(round(., 1)))
+
+saveRDS(Mastertemp3, file = "shiny data/Mastertemp3.RDS")
 ```
 
 Clendar Heatmap
@@ -210,6 +289,12 @@ anim <- ggplot(test2,aes(date,Value))+
 
 anim_save("temperature_trend.gif",animate(anim,renderer = gifski_renderer()))
 ```
+
+
+
+
+
+
 
 
 
