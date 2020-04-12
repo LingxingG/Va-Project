@@ -152,8 +152,11 @@ dashboard4 <- tabItem(tabName = "dashboard4",
                         tags$style(type = "text/css", css),
                         titlePanel("Understanding the Relationship of Singapore's Climate"),
                         fluidRow(),
-                        fluidRow(uiOutput("tYear")),
+                        fluidRow(
+                          column(4,uiOutput("tYear")),
+                          column(4,uiOutput("tRegion1"))),
                         fluidRow(withSpinner(plotlyOutput("tanny4"))),
+                        fluidRow(img(src='scatter.png', align = "left", width="400px", height = "30px"),)
                       ))
 
 dashboard5 <- tabItem(tabName = "dashboard5",
@@ -252,6 +255,26 @@ mainDF <- readRDS("shiny data/mainDF.RDS")
 #             funs(round(., 1)))
 
 masterDF <- readRDS("shiny data/masterDF.RDS")
+
+# masterDF3 <- tm %>%
+#   filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
+#   group_by(Year,Month,Region) %>%
+#   summarise(mean_rain = mean(Value, na.rm = TRUE))
+# 
+# tm_tmp2 <- tm %>%
+#   filter(str_detect(tm$Measurement, "Mean Temperature")) %>%
+#   group_by(Year,Month,Region) %>%
+#   summarise(mean_temp = mean(Value, na.rm = TRUE))
+# 
+# masterDF3$mean_temp = tm_tmp2$mean_temp
+# 
+# masterDF3 <- masterDF3 %>%
+#   mutate_at(vars(mean_temp,
+#                  mean_rain,),
+#             funs(round(., 1))) %>%
+#   na.omit()
+
+masterDF3 <- readRDS("shiny data/masterDF3.RDS")
 #-------------- Maps----------------
 # masterDF2  <- tm %>%
 #   filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
@@ -409,42 +432,43 @@ server <- function(input, output, session) {
   })
   #----------------------------------------dashboard 6 Climate Trend ---------------------------------------
   output$hc2 <- renderHighchart({
-    x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
-    y <-
-      sprintf("{point.%s}", c("upper", "median", "lower", "smooth_vals"))
-    tltip <- tooltip_table(x, y)
-    
-    median_tmp <- mainDF %>%
-      filter(str_detect(mainDF$Measurement, "Temperature"))
-    
-    med <- median(median_tmp$Value, na.rm = TRUE)
-    low <- min(median_tmp$Value, na.rm = TRUE)
-    high = max(median_tmp$Value, na.rm = TRUE)
-    
-    hchart(Mastertemp,
-           type = "columnrange",
-           hcaes(
-             x = date,
-             low = lower,
-             high = upper,
-             color = smooth_vals
-           )) %>%
-      hc_yAxis(
-        tickPositions = c(low -5, med, high +5),
-        gridLineColor = "#000000",
-        labels = list(format = "{value} C", useHTML = TRUE)
-      ) %>%
-      hc_add_series(
-        data = Mastertemp,
-        type = "line",
-        hcaes(x = date, y = smooth_vals),
-        color = "#B71C1C"
-      ) %>%
-      hc_tooltip(
-        useHTML = TRUE,
-        headerFormat = as.character(tags$small("{point.x: %Y %b}")),
-        pointFormat = tltip
-      )
+    # x <- c("Max: ", "Median: ", "Min: ", "Predict: ")
+    # y <-
+    #   sprintf("{point.%s}", c("upper", "median", "lower", "smooth_vals"))
+    # tltip <- tooltip_table(x, y)
+    # 
+    # median_tmp <- mainDF %>%
+    #   filter(str_detect(mainDF$Measurement, "Temperature"))
+    # 
+    # med <- median(median_tmp$Value, na.rm = TRUE)
+    # low <- min(median_tmp$Value, na.rm = TRUE)
+    # high = max(median_tmp$Value, na.rm = TRUE)
+    # 
+    # trendChart <- hchart(Mastertemp,
+    #                      type = "columnrange",
+    #                      hcaes(
+    #                        x = date,
+    #                        low = lower,
+    #                        high = upper,
+    #                        color = smooth_vals
+    #                      )) %>%
+    #   hc_yAxis(
+    #     tickPositions = c(low - 5, med, high + 5),
+    #     gridLineColor = "#000000",
+    #     labels = list(format = "{value} C", useHTML = TRUE)
+    #   ) %>%
+    #   hc_add_series(
+    #     data = Mastertemp,
+    #     type = "line",
+    #     hcaes(x = date, y = smooth_vals),
+    #     color = "#B71C1C"
+    #   ) %>%
+    #   hc_tooltip(
+    #     useHTML = TRUE,
+    #     headerFormat = as.character(tags$small("{point.x: %Y %b}")),
+    #     pointFormat = tltip
+    #   )
+    trendChart<- readRDS("shiny data/trendChart.RDS")
   })
   
   #----------------------------------------dashboard 5 Temperature Radials ---------------------------------------
@@ -463,12 +487,14 @@ server <- function(input, output, session) {
   
   output$hcRegion <- renderUI({
     tmp <- Mastertemp2 %>%
-      filter(Year == as.numeric(input$hc_Year))
+      filter(Year == as.numeric(input$hc_Year)) %>%
+      distinct(Region)
+    
     selectInput(
       inputId = "hc_Region",
       label = "Select Region:",
-      choices = unique(tmp$Region),
-      selected = unique(tmp$Region)[-1]
+      choices = c("All",tmp$Region),
+      selected = "All"
     )
   })
   
@@ -477,9 +503,30 @@ server <- function(input, output, session) {
     y <- sprintf("{point.%s}", c("min_temperaturec", "mean_temperaturec", "max_temperaturec"))
     tltip <- tooltip_table(x, y)
     
-    Mastertemp3 <- Mastertemp2 %>%
-      filter(Region == as.character(input$hc_Region)) %>%
-      filter(Year == as.numeric(input$hc_Year))
+    if (input$hc_Region != "All") {
+      Mastertemp3 <- Mastertemp2 %>%
+        filter(Year == as.character(input$hc_Year)) %>%
+        filter(Region == as.character(input$hc_Region))
+    }else{
+      # Mastertemp3 <- Mastertemp2 %>%
+      #   group_by(Year, date) %>%
+      #   summarise(
+      #     min_temperaturec = min(min_temperaturec, na.rm = TRUE),
+      #     max_temperaturec = max(max_temperaturec, na.rm = TRUE),
+      #     mean_temperaturec = mean(mean_temperaturec , na.rm = TRUE),
+      #     median_temperaturec = median(median_temperaturec, na.rm = TRUE)
+      #   ) %>%
+      #   na.omit()
+      # 
+      # smooth_vals <-
+      #   predict(loess(median_temperaturec ~ Year, Mastertemp3))
+      # Mastertemp3$smooth_vals <- smooth_vals
+      # 
+      # Mastertemp3 <- Mastertemp3 %>%
+      #   mutate_at(3:7, funs(round(., 1)))
+      Mastertemp3<- readRDS("shiny data/Mastertemp3.RDS") %>%
+        filter(Year == as.character(input$hc_Year))
+    }
     
     hchart(Mastertemp3, type = "columnrange",
            hcaes(x = date, low = min_temperaturec, high = max_temperaturec,
@@ -508,8 +555,30 @@ server <- function(input, output, session) {
     )
   })
   
+  output$tRegion1 <- renderUI({
+    db4_tmp <- masterDF %>%
+      filter(Year == input$YearTanny4)%>%
+      na.omit() %>%
+      distinct(Region)
+    
+    selectInput(
+      inputId = "db4select",
+      label = "Please Select Region:",
+      choices = c("All", db4_tmp$Region),
+      selected = "All"
+    )
+  })
+
   tanny4 <- reactive({
-    masterDF[masterDF$Year ==  as.numeric(input$YearTanny4),]
+    if(input$db4select != "All"){
+      tanny4_tmp<- masterDF3 %>%
+        filter(Year == input$YearTanny4)%>%
+        filter(Region == input$db4select)
+    }else
+    {
+      tanny4_tmp<- masterDF3 %>%
+        filter(Year == input$YearTanny4)
+    }
   })
   
   output$tanny4 <- renderPlotly({
@@ -533,12 +602,19 @@ server <- function(input, output, session) {
                )
              )) +
       geom_point(alpha = 0.8) +
-      scale_color_manual(values = c("#6f7778", "#E7B800", "#FC4E07", "#293352", "#52854C"), 
-                         labels = c('East', 'Central', 'Norht', 'North-East', 'West'), name = '') +
+      scale_color_manual(
+        values = c(
+          'East' = "#E7B800",
+          'Central' = "#6f7778",
+          'North' = "#FC4E07",
+          'North-East' = "#293352",
+          'West' = "#52854C"
+        )
+      ) +
       theme(legend.position = "top") +
       labs(y = "Temperature (\u00B0C)", x = "Rain Precipitation (mm)")
-    db4scatter <- ggplotly(scatterPlot, tooltip = "text") %>%
-      layout(legend = list(orientation = "h"))
+
+    db4scatter <- ggplotly(scatterPlot, tooltip = "text")
     
     raindensity <-
       ggplot(tanny4(), aes(mean_rain)) +
@@ -645,6 +721,7 @@ server <- function(input, output, session) {
       selected = mchoices[1]
     )
   })
+
   output$tYear1 <- renderUI({
     t1_year <- mainDF %>%
       filter(str_detect(mainDF$Measurement,input$db2type)) %>%
@@ -673,7 +750,7 @@ server <- function(input, output, session) {
                                  "Oct","Nov","Dec")) %>%
       filter(str_detect(Measurement,input$db2type)) %>%
       filter(Year == as.numeric(input$YearTanny1)) %>%
-      group_by(Year, Month, Region, SZ) %>%
+      group_by(Year, Month,Region,SZ) %>%
       summarise(mean_valuedb2 = mean(Value, na.rm = TRUE)) %>%
       na.omit()
   })
