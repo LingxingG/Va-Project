@@ -38,7 +38,8 @@ Used by Voilin Plot for mainDF
 mpsz <- st_read(dsn = "geospatial",
                 layer = "MP14_SUBZONE_WEB_PL")
 mainDF <- read_csv("merged data/dataset.csv")
-mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d")
+mainDF$date <- as.Date(with(mainDF, paste(Year, Month, Day,sep="-")), "%Y-%b-%d") %>%
+  filter(Year >= 1990)
 
 saveRDS(mainDF, file = "shiny data/mainDF.RDS")
 ```
