@@ -96,7 +96,7 @@ homepage <- tabItem(tabName = "homepage",
                       column(
                         12,
                         h5(
-                          "The current reporting of Singapore's climate has always been primitive and thus it is challenging for viewers to obtain in-depth insights. In 2019, multiple news companies reported that Singapore is heating up twice as fast as the rest of the world. When combined with the island's constant high humidity, it could be life-threatening. Professor Matthias Roth of the department of geography at the National University of Singapore (NUS) attributed the rising temperatures to global warming and the Urban Heat Island (UHI) effect. However, there was no data given to back up their claims on Singapore's climate change."
+                          " The current reporting of Singapore's climate has always been  primitive, hence, it is challenging for users to derive in-depth  insights. In 2019, multiple news companies reported that Singapore is heating up twice as fast as the rest of the world and that Professor Matthias Roth from the department of geography at National  University of Singapore attributed the rising temperatures to global warming and the Urban Heat Island (UHI) effect. However, there was no data or charts provided from them to back up their claims on  Singapore's climate change."
                         )
                       ), ),
                       fluidRow(column(
@@ -186,7 +186,7 @@ dashboard5 <- tabItem(tabName = "dashboard5",
 dashboard6 <- tabItem(tabName = "dashboard6",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        titlePanel("Singapore Temperature Change (1982-2019)"),
+                        titlePanel("Singapore Temperature Change (1990-2019)"),
                         fluidRow(withSpinner(
                           highchartOutput("hc2", height = "550px")
                         )),
@@ -461,11 +461,11 @@ server <- function(input, output, session) {
     selectInput(
       inputId = "my_measure",
       label = "Select to view:",
-      choices = c('Daily Rainfall Total (mm)', "Mean Temperature (°C)")
+      choices = c('Daily Rain Precipitation Total (mm)', "Mean Temperature (°C)")
     )
   })
   output$my1 <- renderPlot({
-    if (input$my_measure == "Daily Rainfall Total (mm)") {
+    if (input$my_measure == "Daily Rain Precipitation Total (mm)") {
       dat %>% 
         filter(str_detect(Measurement,"Rain")) %>% 
         filter(Year <= input$calendaryear[2]) %>% 
@@ -473,7 +473,7 @@ server <- function(input, output, session) {
         ggplot(aes(monthweek, weekdayf, fill = Value)) +
         geom_tile(colour = "white") + 
         facet_grid(Year ~ monthf) + 
-        scale_fill_gradient(low = "yellow", high = "red") +
+        scale_fill_gradient(low = "green", high = "red") +
         labs(fill = input$my_measure) +
         xlab("Week of Month") + ylab("")
     }
@@ -485,7 +485,7 @@ server <- function(input, output, session) {
         ggplot(aes(monthweek, weekdayf, fill = Value)) +
         geom_tile(colour = "white") + 
         facet_grid(Year ~ monthf) + 
-        scale_fill_gradient(low = "yellow", high = "red") +
+        scale_fill_gradient(low = "green", high = "red") +
         labs(fill = input$my_measure) + 
         xlab("Week of Month") + ylab("")
     }
@@ -635,7 +635,7 @@ server <- function(input, output, session) {
           'West' = "#52854C"
         )
       ) +
-      theme(legend.position = "top") +
+      theme(legend.position = "none") +
       labs(y = "Temperature (\u00B0C)", x = "Rain Precipitation (mm)")
 
     db4scatter <- ggplotly(scatterPlot, tooltip = "text")
@@ -724,7 +724,7 @@ server <- function(input, output, session) {
       scale_y_discrete(expand = expand_scale(mult = c(0.01, 0.25))) +
       scale_fill_viridis_c(name = "Precipitation (mm)", option = "D") +
       labs(title = 'Rainfall',
-           subtitle = 'Mean Rainfall Precipitation (mm) by Year',
+           subtitle = 'Mean Rain Precipitation (mm) by Year',
            x ="Mean Rainll") +
       theme_ridges(font_size = 13, grid = TRUE) +
       theme(axis.title.y = element_blank())
@@ -746,39 +746,40 @@ server <- function(input, output, session) {
   })
 
   output$tYear1 <- renderUI({
-    t1_year <- tmpV %>%
-      select(Measurement,Year) %>%
-      filter(str_detect(tmpV$Measurement,input$db2type)) %>%
-      na.omit() %>%
-      distinct(Year)
-  
     sliderInput(
       inputId = "YearTanny1",
       label = "Year:",
-      min = if(str_detect(input$db2type, "Temperature")){2009}else{min(t1_year$Year, na.rm = TRUE)},
-      max = max(t1_year$Year, na.rm = TRUE),
-      value = if(str_detect(input$db2type, "Temperature")){2009}else{min(t1_year$Year, na.rm = TRUE)},
+      min = if (str_detect(input$db2type, "Temperature")) {
+        2009
+      } else{
+        min(
+          tmpV %>%
+            select(Measurement, Year,Value) %>%
+            filter(str_detect(tmpV$Measurement, input$db2type)) %>%
+            na.omit() %>%
+            select(Year),
+          na.rm = TRUE
+        )
+      },
+      max = 2019,
+      value = if (str_detect(input$db2type, "Temperature")) {
+        2009
+      } else{
+        min(
+          tmpV %>%
+            select(Measurement, Year,Value) %>%
+            filter(str_detect(tmpV$Measurement, input$db2type)) %>%
+            na.omit() %>%
+            select(Year),
+          na.rm = TRUE
+        )
+      },
       step = 1,
       sep = "",
       animate = animationOptions(interval = 5000, loop = FALSE)
     )
   })
-  
-  # db2DF <- reactive({
-  #   db2DF_tmp <- mainDF %>%
-  #     select(Year,Month,Region,SZ,Measurement,Value) %>%
-  #     mutate(Month = fct_relevel(Month,
-  #                                "Jan","Feb","Mar",
-  #                                "Apr","May","Jun",
-  #                                "Jul","Aug","Sep",
-  #                                "Oct","Nov","Dec")) %>%
-  #     filter(str_detect(Measurement,input$db2type)) %>%
-  #     filter(Year == as.numeric(input$YearTanny1)) %>%
-  #     group_by(Year, Month,Region,SZ) %>%
-  #     summarise(mean_valuedb2 = mean(Value, na.rm = TRUE)) %>%
-  #     na.omit()
-  # })
-  
+
   output$tanny1 <- renderPlotly({
     rain <- ggplot(tmpV %>%
                      filter(Year == as.numeric(input$YearTanny1)) %>%
@@ -788,13 +789,6 @@ server <- function(input, output, session) {
                      na.omit(),
                    aes(x = Month,
                        y = mean_valuedb2
-                       # text = paste("Month: ",Month,
-                       #             "<br>Value: ", mean_valuedb2,
-                       #             if (str_detect(input$db2type,"Rainfall")) {
-                       #               "( mm )"
-                       #             } else{
-                       #               "(\u00B0C)"
-                       #             })
                        )
                    ) +
       geom_violin(
@@ -810,9 +804,9 @@ server <- function(input, output, session) {
         ) +
       xlab("") +
       ylab(if (str_detect(input$db2type,"Rainfall")) {
-        "Average Rainfall ( mm )"
+        "Rain Precipitation ( mm )"
       } else{
-        "Average temperature (\u00B0C)"
+        "Temperature (\u00B0C)"
       })
     
     rain <- ggplotly(rain, tooltip = "text")
