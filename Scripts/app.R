@@ -37,11 +37,6 @@ sidebar <- dashboardSidebar(
       icon = icon("home")
       ),
     menuItem(
-      "Climate Choropleth Map",
-      tabName = "dashboard1",
-      icon = icon("map")
-    ),
-    menuItem(
       "Temperature Radials",
       tabName = "dashboard5",
       icon = icon("thermometer-quarter")
@@ -79,6 +74,12 @@ sidebar <- dashboardSidebar(
       tabName = "dashboard7",
       icon = icon("calendar")
     )
+,
+    menuItem(
+      "Climate Choropleth Map",
+      tabName = "dashboard1",
+      icon = icon("map")
+    )
   )
 )
 
@@ -106,20 +107,29 @@ homepage <- tabItem(tabName = "homepage",
                       )),
                       fluidRow(column(12, h6("Data Source: NEA")))
                     ))
+
 dashboard1 <- tabItem(tabName = "dashboard1",
                       fluidPage(
                         tags$style(type = "text/css", css),
-                        fluidRow(
-                        titlePanel("Birdeye view of Mean Rainfall and Mean Temperature Using Singapore Map"),
-                        sidebarLayout(
+                        titlePanel(
+                          "Birdeye view of Mean Rainfall and Mean Temperature Using Singapore Map"
+                        ),
+                        fluidRow(sidebarLayout(
                           sidebarPanel(fluidRow(uiOutput("sYear")),
-                                     fluidRow(uiOutput("sMonth")),
-                                     width = 2),
-                        mainPanel(fluidRow(
-                          column(5, leafletOutput("lxmap")),
-                          column(5, leafletOutput("lxmap2"))
-                        ), width = 10))
-                      )))
+                                       fluidRow(uiOutput("sMonth")),
+                                       width = 2),
+                          mainPanel(fluidRow(
+                            column(5, leafletOutput("lxmap")),
+                            column(5, leafletOutput("lxmap2"))
+                          ), width = 10)
+                        )),
+                        fluidRow(column(
+                          12,
+                          h4(
+                            "DISCLAIMER: Our goal is to create an isopleth map. However, due to the limited datapoint available and limited knowledge within the team, we are unable to achieve our goal. Here's our attempt with a choropleth map."
+                          )
+                        ))
+                      ))
 
 dashboard2 <- tabItem(tabName = "dashboard2",
                       withSpinner(fluidPage(
@@ -195,6 +205,7 @@ dashboard7 <- tabItem(tabName = "dashboard7",
 dashboard8 <- tabItem(tabName = "dashboard8",
                       fluidPage(tags$style(type = "text/css", css),
                                 fluidRow(withSpinner(plotOutput("my2")))))
+                                
 #~~~~~~~~~~~~~~~~~~~~~~~~~ 2.1.2 Fill in dashboard elements ~~~~~~~~~~~~~~~~~~~~~~~~~ 
 body <- dashboardBody(
   use_waiter(),
