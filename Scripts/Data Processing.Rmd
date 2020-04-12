@@ -33,7 +33,6 @@ for (p in packages) {
 
 ```
 Remove wind variable and update year up to 1990
-Used by Voilin Plot for mainDF
 ```{r}
 #------------- Inital Files ------------------
 mpsz <- st_read(dsn = "geospatial",
@@ -46,6 +45,19 @@ mainDF <- mainDF %>%
   filter(Year >= 1990) 
 
 saveRDS(mainDF, file = "shiny data/mainDF.RDS")
+```
+Used by Voilin Plot
+```{r}
+tmpV <- mainDF %>%
+    select(Year, Month, Region, SZ, Measurement, Value) %>%
+    mutate(Measurement= str_replace(Measurement, " \\(.*\\)", ""))%>%
+    mutate(Month = fct_relevel(Month,
+                              "Jan","Feb","Mar",
+                              "Apr","May","Jun",
+                              "Jul","Aug","Sep",
+                              "Oct","Nov","Dec"))
+    
+saveRDS(tmpV, file = "shiny data/tmpV.RDS")
 ```
 
 Used by Ridge Plot
@@ -297,17 +309,8 @@ anim_save("temperature_trend.gif",animate(anim,renderer = gifski_renderer()))
 ```
 
 ```{r}
-Mastertemp2 <- readRDS("shiny data/Mastertemp2.RDS")
-
-Year_min <- min(Mastertemp2[, "Year"], na.rm = TRUE)
-Year_max <- max(Mastertemp2[, "Year"], na.rm = TRUE)
+# mainDF <- readRDS("shiny data/mainDF.RDS")
 ```
-
-
-
-
-
-
 
 
 
