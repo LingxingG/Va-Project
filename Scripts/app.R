@@ -44,7 +44,7 @@ sidebar <- dashboardSidebar(
     menuItem(
       "Temperature Radials",
       tabName = "dashboard5",
-      icon = icon("dashboard")
+      icon = icon("thermometer-quarter")
     ),
     menuItem(
       "Correlation Plot",
@@ -221,8 +221,9 @@ mpsz <- st_read(dsn = "geospatial",
 # mainDF <- mainDF %>%
 #   filter(!str_detect(mainDF$Measurement, "Wind")) %>%
 #   filter(Year >= 1990) 
-mainDF <- readRDS("shiny data/mainDF.RDS")
+# mainDF <- readRDS("shiny data/mainDF.RDS")
 #-------------- Non Maps ------------
+#------Rridge-------
 # tm <- mainDF %>%
 #   mutate(
 #     Month = fct_relevel(
@@ -257,6 +258,7 @@ mainDF <- readRDS("shiny data/mainDF.RDS")
 
 masterDF <- readRDS("shiny data/masterDF.RDS")
 
+#----- Correlation ------
 # masterDF3 <- tm %>%
 #   filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
 #   group_by(Year,Month,Region) %>%
@@ -276,6 +278,17 @@ masterDF <- readRDS("shiny data/masterDF.RDS")
 #   na.omit()
 
 masterDF3 <- readRDS("shiny data/masterDF3.RDS")
+
+#----- Violin ------
+# tmpV <- mainDF %>%
+#   select(Year, Month, Region, SZ, Measurement, Value) %>%
+#   mutate(Month = fct_relevel(Month,
+#                              "Jan","Feb","Mar",
+#                              "Apr","May","Jun",
+#                              "Jul","Aug","Sep",
+#                              "Oct","Nov","Dec"))
+tmpV <- readRDS("shiny data/tmpV.RDS")
+
 #-------------- Maps----------------
 # masterDF2  <- tm %>%
 #   filter(str_detect(tm$Measurement, "Daily Rainfall Total")) %>%
@@ -346,9 +359,6 @@ masterDF2 <- readRDS("shiny data/masterDF2.RDS")
 #     pointFormat = tltip
 #   )
 
-Year_min <- min(Mastertemp2[, "Year"], na.rm = TRUE)
-Year_max <- max(Mastertemp2[, "Year"], na.rm = TRUE)
-
 #--------------Weathers Radials------------
 # Mastertemp2 <- mainDF %>%
 #   filter(str_detect(mainDF$Measurement, "Temperature")) %>%
@@ -367,6 +377,8 @@ Year_max <- max(Mastertemp2[, "Year"], na.rm = TRUE)
 #   mutate_at(4:8, funs(round(., 1)))
 
 Mastertemp2 <- readRDS("shiny data/Mastertemp2.RDS")
+Year_min <- min(Mastertemp2[, "Year"], na.rm = TRUE)
+Year_max <- max(Mastertemp2[, "Year"], na.rm = TRUE)
 #-------------- Calendar Heatmap ----------------
 # dat <- mainDF %>%
 #   select(Year, Month, Day, Measurement, Value) %>%
@@ -709,10 +721,8 @@ server <- function(input, output, session) {
   
   #----------------------------------------dashboard 2 Voilin Plot  ---------------------------------------
   output$tMeasure <- renderUI({
-    mchoices <- mainDF %>%
+    mchoices <- tmpV %>%
       select(Measurement) %>%
-      filter(!str_detect(mainDF$Measurement,"Wind")) %>%
-      mutate(Measurement= str_replace(Measurement, " \\(.*\\)", ""))%>%
       na.omit() %>%
       distinct(Measurement)
     
@@ -725,9 +735,9 @@ server <- function(input, output, session) {
   })
 
   output$tYear1 <- renderUI({
-    t1_year <- mainDF %>%
+    t1_year <- tmpV %>%
       select(Measurement,Year) %>%
-      filter(str_detect(mainDF$Measurement,input$db2type)) %>%
+      filter(str_detect(tmpV$Measurement,input$db2type)) %>%
       na.omit() %>%
       distinct(Year)
   
@@ -759,16 +769,10 @@ server <- function(input, output, session) {
   # })
   
   output$tanny1 <- renderPlotly({
-    rain <- ggplot(mainDF %>%
-                     select(Year,Month,Region,SZ,Measurement,Value) %>%
-                     mutate(Month = fct_relevel(Month,
-                                                "Jan","Feb","Mar",
-                                                "Apr","May","Jun",
-                                                "Jul","Aug","Sep",
-                                                "Oct","Nov","Dec")) %>%
-                     filter(str_detect(Measurement,input$db2type)) %>%
+    rain <- ggplot(tmpV %>%
                      filter(Year == as.numeric(input$YearTanny1)) %>%
-                     group_by(Year, Month,Region,SZ) %>%
+                     filter(str_detect(Measurement, input$db2type)) %>%
+                     group_by(Year, Month, Region, SZ) %>%
                      summarise(mean_valuedb2 = mean(Value, na.rm = TRUE)) %>%
                      na.omit(),
                    aes(x = Month,
